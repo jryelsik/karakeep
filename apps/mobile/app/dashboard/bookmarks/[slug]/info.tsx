@@ -345,7 +345,7 @@ function BookmarkActionsSection({ bookmark }: { bookmark: ZBookmark }) {
             fill={isFavourited ? "#ebb434" : "transparent"}
           />
           <Text className="flex-1" numberOfLines={1}>
-            Favourite
+            Favorite
           </Text>
         </View>
         <Switch

@@ -115,7 +115,7 @@ Source URL: ${bookmark.content.sourceUrl ?? ""}`;
       : ((bookmark.content.type === "link" ? bookmark.content.title : "") ?? "")
   }
   Archived: ${bookmark.archived}
-  Favourited: ${bookmark.favourited}
+  Favorited: ${bookmark.favourited}
   Source: ${bookmark.source ?? ""}
   Tagging status: ${bookmark.taggingStatus ?? ""}
   Summarization status: ${bookmark.summarizationStatus ?? ""}

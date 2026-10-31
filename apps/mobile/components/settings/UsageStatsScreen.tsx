@@ -541,7 +541,7 @@ export default function UsageStatsScreen() {
       <SectionLabel>At a glance</SectionLabel>
       <View className="flex-row flex-wrap gap-2">
         <MetricTile
-          label="Favourites"
+          label="Favorites"
           value={formatNumber(stats.numFavorites)}
           icon={Heart}
           width={metricTileWidth}

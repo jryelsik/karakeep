@@ -9,7 +9,7 @@ Push Karakeep further with automation and integrations.
 
 ## Rule engine
 
-- Create if-this-then-that style rules to auto-tag, favourite, or route bookmarks into lists based on metadata or content.
+- Create if-this-then-that style rules to auto-tag, favorite, or route bookmarks into lists based on metadata or content.
 - Useful for keeping inboxes tidy (e.g. auto-archive newsletters, auto-tag domains, or flag videos).
 
 ## API

@@ -514,7 +514,7 @@
         "bookmark_type_is": "Bookmark Type Is",
         "bookmark_source_is": "Bookmark Source Is",
         "has_tag": "Has Tag",
-        "is_favourited": "Is Favourited",
+        "is_favourited": "Is Favorited",
         "is_archived": "Is Archived",
         "and": "All of the following are true",
         "or": "Any of the following are true"
@@ -525,7 +525,7 @@
         "add_to_list": "Add to List",
         "remove_from_list": "Remove from List",
         "download_full_page_archive": "Download Full Page Archive",
-        "favourite_bookmark": "Favourite Bookmark",
+        "favourite_bookmark": "Favorite Bookmark",
         "archive_bookmark": "Archive Bookmark"
       },
       "events_types": {
@@ -534,7 +534,7 @@
         "tag_removed": "This tag is removed from a bookmark",
         "added_to_list": "A bookmark is added to this list",
         "removed_from_list": "A bookmark is removed from this list",
-        "favourited": "A bookmark is favourited",
+        "favourited": "A bookmark is favorited",
         "archived": "A bookmark is archived"
       }
     },
@@ -863,7 +863,7 @@
   },
   "lists": {
     "all_lists": "All Lists",
-    "favourites": "Favourites",
+    "favourites": "Favorites",
     "shared": "Shared",
     "shared_lists": "Shared Lists",
     "privacy": {

@@ -5,11 +5,11 @@ slug: bookmarking
 
 # Bookmarking
 
-Everything in Karakeep starts as a bookmark. Here’s how the different types work and how to keep your home view tidy with favourites and archive.
+Everything in Karakeep starts as a bookmark. Here’s how the different types work and how to keep your home view tidy with favorites and archive.
 
-## Favourites
+## Favorites
 
-- Star bookmarks you like so they sit in their own dedicated favourites view for quick return visits.
+- Star bookmarks you like so they sit in their own dedicated favorites view for quick return visits.
 - Handy for saved gems you want to re-open often like articles you enjoyed, references you come back to, or things worth sharing.
 
 ## Archiving

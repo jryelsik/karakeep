@@ -10,7 +10,7 @@ Lists are the core organizational layer in Karakeep. Every saved item can sit in
 
 - Curated sets you add bookmarks to by hand. Great for projects, reading queues, or hand-picked collections.
 - Can be **private** (visible only to you) or **public** (share a read-only link).
-- Can be **collaborative**: invite people by email as viewers or editors. Editors can add their own bookmarks; viewers can browse. Your personal states (favourite/archive) stay yours even inside a shared list.
+- Can be **collaborative**: invite people by email as viewers or editors. Editors can add their own bookmarks; viewers can browse. Your personal states (favorite/archive) stay yours even inside a shared list.
 
 ## Smart lists
 

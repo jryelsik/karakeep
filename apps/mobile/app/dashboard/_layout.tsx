@@ -73,7 +73,7 @@ export default function Dashboard() {
       <Stack.Screen
         name="favourites"
         options={{
-          headerTitle: "⭐️ Favourites",
+          headerTitle: "⭐️ Favorites",
           headerBackTitle: "Back",
           headerRight: () => <BookmarkListHeader />,
         }}

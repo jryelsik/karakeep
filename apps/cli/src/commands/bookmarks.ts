@@ -61,7 +61,7 @@ function printBookmarkDetail(b: ZBookmark) {
   if (url) console.log(`  URL:         ${chalk.cyan(url)}`);
   if (tags) console.log(`  Tags:        ${tags}`);
   if (b.archived) console.log(`  Archived:    yes`);
-  if (b.favourited) console.log(`  Favourited:  yes`);
+  if (b.favourited) console.log(`  Favorited:   yes`);
   console.log(`  Created:     ${b.createdAt.toISOString()}`);
   if (b.modifiedAt) console.log(`  Modified:    ${b.modifiedAt.toISOString()}`);
   if (b.source) console.log(`  Source:      ${b.source}`);
@@ -146,7 +146,7 @@ function printBookmarkCard(b: ZBookmark) {
   }
   if (tags) console.log(`  Tags: ${tags}`);
   if (b.archived) console.log(`  Archived: yes`);
-  if (b.favourited) console.log(`  Favourited: yes`);
+  if (b.favourited) console.log(`  Favorited: yes`);
   if (b.note) console.log(`  Note: ${b.note}`);
   console.log();
 }
@@ -541,8 +541,16 @@ bookmarkCmd
   .option("--note <note>", "if set, the bookmark's note will be updated")
   .option("--archive", "if set, the bookmark will be archived")
   .option("--no-archive", "if set, the bookmark will be unarchived")
-  .option("--favourite", "if set, the bookmark will be favourited")
-  .option("--no-favourite", "if set, the bookmark will be unfavourited")
+  .option("--favorite", "if set, the bookmark will be favorited")
+  .option("--no-favorite", "if set, the bookmark will be unfavorited")
+  .option(
+    "--favourite",
+    "alias for --favorite (if set, the bookmark will be favorited)",
+  )
+  .option(
+    "--no-favourite",
+    "alias for --no-favorite (if set, the bookmark will be unfavorited)",
+  )
   .option(
     "--description <description>",
     "if set, the bookmark's description will be updated",
@@ -554,7 +562,8 @@ bookmarkCmd
       .mutate({
         bookmarkId: id,
         archived: opts.archive,
-        favourited: opts.favourite,
+        favourited:
+          opts.favorite !== undefined ? opts.favorite : opts.favourite,
         title: opts.title,
         note: opts.note,
         description: opts.description,

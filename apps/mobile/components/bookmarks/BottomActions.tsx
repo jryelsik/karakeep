@@ -66,8 +66,8 @@ export const TOOLBAR_ACTION_REGISTRY: Record<
     sfSymbol: "info.circle",
   },
   favourite: {
-    label: "Favourite",
-    render: (b) => (b.favourited ? "Unfavourite" : "Favourite"),
+    label: "Favorite",
+    render: (b) => (b.favourited ? "Unfavorite" : "Favorite"),
     Icon: Star,
     sfSymbol: "star",
   },

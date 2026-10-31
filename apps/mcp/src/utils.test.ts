@@ -68,7 +68,7 @@ describe("compactBookmark", () => {
     expect(out).toContain("Bookmark type: text");
     expect(out).toContain("Text: the actual stored text");
     expect(out).toContain("Archived: false");
-    expect(out).toContain("Favourited: false");
+    expect(out).toContain("Favorited: false");
     expect(out).toContain("Tagging status: success");
   });
 

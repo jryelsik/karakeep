@@ -153,7 +153,7 @@ function formatEventType(type: string): string {
     case "removedFromList":
       return "Removed from List";
     case "favourited":
-      return "Favourited";
+      return "Favorited";
     case "archived":
       return "Archived";
     default:

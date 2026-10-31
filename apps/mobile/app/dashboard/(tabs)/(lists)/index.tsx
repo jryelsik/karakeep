@@ -126,7 +126,7 @@ export default function Lists() {
     {
       id: "fav",
       logo: "⭐️",
-      name: "Favourites",
+      name: "Favorites",
       href: "/dashboard/favourites",
       level: 0,
       numChildren: 0,

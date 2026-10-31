@@ -52,14 +52,14 @@ it("saves a link and finds it through search", async ({ page }) => {
   await expect(cards).toHaveCount(1);
 });
 
-it("favorites a bookmark and shows it in Favourites", async ({ page }) => {
+it("favorites a bookmark and shows it in Favorites", async ({ page }) => {
   const bookmark = await seedBookmark(page);
   await bookmark.hover();
   await bookmark.getByRole("button", { name: "Favorite", exact: true }).click();
   await expect(
     bookmark.getByRole("button", { name: "Unfavorite", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: /Favourites/ }).click();
+  await page.getByRole("link", { name: /Favorites/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/favourites$/);
   await expect(bookmark).toHaveText(/A bookmark for the weekend/);
   await page.reload();
