@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ import {
   Link,
   List,
   ListX,
+  Maximize2,
   MoreHorizontal,
   Pencil,
   RotateCw,
@@ -100,6 +102,7 @@ export default function BookmarkOptions({
   trigger?: React.ReactNode;
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const linkId = bookmark.id;
   const { data: session } = useSession();
 
@@ -281,6 +284,14 @@ export default function BookmarkOptions({
         visible: isOwner && isTouchDevice,
         disabled: false,
         onClick: () => enableBulkEditForBookmark(bookmark.id),
+      },
+      {
+        id: "preview",
+        title: t("actions.expand_preview"),
+        icon: <Maximize2 className="size-4" />,
+        visible: isTouchDevice,
+        disabled: false,
+        onClick: () => router.push(`/dashboard/preview/${bookmark.id}`),
       },
       {
         id: "edit",

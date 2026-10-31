@@ -24,6 +24,7 @@ import {
   Globe,
   GripVertical,
   Image as ImageIcon,
+  Maximize2,
   MoreHorizontal,
   NotebookPen,
 } from "lucide-react";
@@ -545,6 +546,15 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
     >
       <BulkEditSelectionOverlay bookmark={bookmark} />
       <OwnerIndicator bookmark={bookmark} />
+      <div className="pointer-events-none absolute left-0 top-0 z-[60] hidden items-center gap-0.5 rounded bg-white/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-black/80 [@media(pointer:fine)]:pointer-events-auto [@media(pointer:fine)]:flex">
+        <Link
+          href={`/dashboard/preview/${bookmark.id}`}
+          className="rounded p-0.5 hover:bg-background/50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Maximize2 className="size-3.5 text-muted-foreground" />
+        </Link>
+      </div>
       <div className="pointer-events-none absolute right-0 top-0 z-[60] hidden items-center gap-0.5 rounded bg-white/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-black/80 [@media(pointer:fine)]:pointer-events-auto [@media(pointer:fine)]:flex">
         <BookmarkOptions
           bookmark={bookmark}
