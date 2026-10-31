@@ -24,12 +24,17 @@ import {
   useBookmarkDisplaySettings,
   useBookmarkLayout,
   useCompactGridColumns,
+  useCompactGridIconSize,
   useGridColumns,
 } from "@/lib/userLocalSettings/bookmarksLayout";
-import { COMPACT_GRID_COLUMN_STEPS } from "@/lib/userLocalSettings/types";
+import {
+  COMPACT_GRID_COLUMN_STEPS,
+  COMPACT_GRID_ICON_SIZES,
+} from "@/lib/userLocalSettings/types";
 import {
   updateBookmarksLayout,
   updateCompactGridColumns,
+  updateCompactGridIconSize,
   updateGridColumns,
   updateImageFit,
   updateShowEditorCard,
@@ -68,6 +73,7 @@ export default function ViewOptions() {
   const layout = useBookmarkLayout();
   const gridColumns = useGridColumns();
   const compactGridColumns = useCompactGridColumns();
+  const compactGridIconSize = useCompactGridIconSize();
   const actualDisplaySettings = useBookmarkDisplaySettings();
   const [tempColumns, setTempColumns] = useState(gridColumns);
   const [tempCompactStepIndex, setTempCompactStepIndex] = useState(() => {
@@ -75,6 +81,10 @@ export default function ViewOptions() {
       compactGridColumns as (typeof COMPACT_GRID_COLUMN_STEPS)[number],
     );
     return idx >= 0 ? idx : 5;
+  });
+  const [tempIconSizeIndex, setTempIconSizeIndex] = useState(() => {
+    const idx = COMPACT_GRID_ICON_SIZES.indexOf(compactGridIconSize);
+    return idx >= 0 ? idx : 1;
   });
   const [, startTransition] = useTransition();
 
@@ -105,6 +115,11 @@ export default function ViewOptions() {
     );
     setTempCompactStepIndex(idx >= 0 ? idx : 5);
   }, [compactGridColumns]);
+
+  useEffect(() => {
+    const idx = COMPACT_GRID_ICON_SIZES.indexOf(compactGridIconSize);
+    setTempIconSizeIndex(idx >= 0 ? idx : 1);
+  }, [compactGridIconSize]);
 
   // Handlers with optimistic updates
   const handleLayoutChange = (newLayout: LayoutType) => {
@@ -206,17 +221,38 @@ export default function ViewOptions() {
                 </span>
               </div>
               {isCompactGrid ? (
-                <Slider
-                  value={[tempCompactStepIndex]}
-                  onValueChange={([value]) => setTempCompactStepIndex(value)}
-                  onValueCommit={([value]) =>
-                    updateCompactGridColumns(COMPACT_GRID_COLUMN_STEPS[value])
-                  }
-                  min={0}
-                  max={COMPACT_GRID_COLUMN_STEPS.length - 1}
-                  step={1}
-                  className="w-full"
-                />
+                <>
+                  <Slider
+                    value={[tempCompactStepIndex]}
+                    onValueChange={([value]) => setTempCompactStepIndex(value)}
+                    onValueCommit={([value]) =>
+                      updateCompactGridColumns(COMPACT_GRID_COLUMN_STEPS[value])
+                    }
+                    min={0}
+                    max={COMPACT_GRID_COLUMN_STEPS.length - 1}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="mb-3 mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <span>{t("view_options.icon_size")}</span>
+                    <span>
+                      {t(
+                        `view_options.icon_sizes.${COMPACT_GRID_ICON_SIZES[tempIconSizeIndex]}`,
+                      )}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[tempIconSizeIndex]}
+                    onValueChange={([value]) => setTempIconSizeIndex(value)}
+                    onValueCommit={([value]) =>
+                      updateCompactGridIconSize(COMPACT_GRID_ICON_SIZES[value])
+                    }
+                    min={0}
+                    max={COMPACT_GRID_ICON_SIZES.length - 1}
+                    step={1}
+                    className="w-full"
+                  />
+                </>
               ) : (
                 <Slider
                   value={[tempColumns]}

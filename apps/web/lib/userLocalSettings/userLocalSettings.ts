@@ -2,7 +2,11 @@
 
 import { cookies } from "next/headers";
 
-import type { BookmarksLayoutTypes, UserLocalSettings } from "./types";
+import type {
+  BookmarksLayoutTypes,
+  CompactGridIconSize,
+  UserLocalSettings,
+} from "./types";
 import {
   defaultUserLocalSettings,
   parseUserLocalSettings,
@@ -45,6 +49,12 @@ export async function updateGridColumns(gridColumns: number) {
 
 export async function updateCompactGridColumns(compactGridColumns: number) {
   await readModifyWrite(() => ({ compactGridColumns }));
+}
+
+export async function updateCompactGridIconSize(
+  compactGridIconSize: CompactGridIconSize,
+) {
+  await readModifyWrite(() => ({ compactGridIconSize }));
 }
 
 export async function updateShowNotes(showNotes: boolean) {

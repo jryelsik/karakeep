@@ -57,6 +57,14 @@
     "layout": "Layout",
     "columns": "Columns",
     "unlimited": "Unlimited",
+    "icon_size": "Icon Size",
+    "icon_sizes": {
+      "tiny": "Tiny",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "huge": "Huge"
+    },
     "display_options": "Display Options",
     "show_note_previews": "Show Notes",
     "show_tags": "Show Tags",

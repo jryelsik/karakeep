@@ -15,11 +15,22 @@ export const COMPACT_GRID_COLUMN_STEPS = [
   1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 0,
 ] as const;
 
+export const COMPACT_GRID_ICON_SIZES = [
+  "tiny",
+  "small",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export const zCompactGridIconSize = z.enum(COMPACT_GRID_ICON_SIZES);
+export type CompactGridIconSize = z.infer<typeof zCompactGridIconSize>;
+
 export const zUserLocalSettings = z.object({
   bookmarkGridLayout: zBookmarkGridLayout.optional().default("masonry"),
   lang: z.string().optional().default("en"),
   gridColumns: z.number().min(1).max(6).optional().default(3),
   compactGridColumns: z.number().min(0).max(12).optional().default(6),
+  compactGridIconSize: zCompactGridIconSize.optional().default("small"),
   showNotes: z.boolean().optional().default(false),
   showTags: z.boolean().optional().default(true),
   showTitle: z.boolean().optional().default(true),

@@ -5,6 +5,7 @@ import web from "@karakeep/tailwind-config/web";
 const config = {
   content: [
     ...web.content,
+    "lib/**/*.{ts,tsx}",
     "../../packages/shared-react/components/**/*.{ts,tsx}",
     "../../node_modules/streamdown/dist/*.js",
     "../../node_modules/@streamdown/cjk/dist/*.js",

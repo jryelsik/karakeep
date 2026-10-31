@@ -10,8 +10,10 @@ import { useInBookmarkGridStore } from "@/lib/store/useInBookmarkGridStore";
 import { useKeyboardNavigationStore } from "@/lib/store/useKeyboardNavigationStore";
 import {
   bookmarkLayoutSwitch,
+  COMPACT_GRID_SIZE_METRICS,
   useBookmarkLayout,
   useCompactGridColumns,
+  useCompactGridIconSize,
   useGridColumns,
 } from "@/lib/userLocalSettings/bookmarksLayout";
 import { cn } from "@/lib/utils";
@@ -178,6 +180,8 @@ export default function BookmarksGrid({
   const layout = useBookmarkLayout();
   const gridColumns = useGridColumns();
   const compactGridColumns = useCompactGridColumns();
+  const compactGridIconSize = useCompactGridIconSize();
+  const compactMetrics = COMPACT_GRID_SIZE_METRICS[compactGridIconSize];
   const activeGridColumns = useActiveGridColumns(gridColumns);
   const compactGridRef = useRef<HTMLDivElement>(null);
   const [activeCompactColumns, setActiveCompactColumns] = useState(
@@ -201,9 +205,13 @@ export default function BookmarksGrid({
     if (layout !== "compact-grid") return;
     const el = compactGridRef.current;
     if (!el) return;
+    const { tileWidth, gap } = compactMetrics;
     const updateCols = () => {
       const width = el.clientWidth;
-      const fitCols = Math.max(1, Math.floor((width + 16) / (76 + 16)));
+      const fitCols = Math.max(
+        1,
+        Math.floor((width + gap) / (tileWidth + gap)),
+      );
       setActiveCompactColumns(
         compactGridColumns === 0
           ? fitCols
@@ -214,7 +222,7 @@ export default function BookmarksGrid({
     const ro = new ResizeObserver(updateCols);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [layout, compactGridColumns, bookmarks.length]);
+  }, [layout, compactGridColumns, compactMetrics, bookmarks.length]);
 
   // For list/compact layouts, navigation is single-column
   const isListLayout = layout === "list" || layout === "compact";
@@ -326,12 +334,13 @@ export default function BookmarksGrid({
             )}
             <div ref={compactGridRef} className="w-full py-4">
               <div
-                className="mx-auto grid justify-center gap-4"
+                className="mx-auto grid justify-center"
                 style={{
-                  gridTemplateColumns: "repeat(auto-fill, 76px)",
+                  gap: `${compactMetrics.gap}px`,
+                  gridTemplateColumns: `repeat(auto-fill, ${compactMetrics.tileWidth}px)`,
                   maxWidth:
                     compactGridColumns > 0
-                      ? `${compactGridColumns * 76 + (compactGridColumns - 1) * 16}px`
+                      ? `${compactGridColumns * compactMetrics.tileWidth + (compactGridColumns - 1) * compactMetrics.gap}px`
                       : undefined,
                 }}
               >

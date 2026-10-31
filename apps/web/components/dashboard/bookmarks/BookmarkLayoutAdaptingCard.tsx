@@ -12,8 +12,10 @@ import { useClientConfig } from "@/lib/clientConfig";
 import { useTranslation } from "@/lib/i18n/client";
 import {
   bookmarkLayoutSwitch,
+  COMPACT_GRID_SIZE_METRICS,
   useBookmarkDisplaySettings,
   useBookmarkLayout,
+  useCompactGridIconSize,
 } from "@/lib/userLocalSettings/bookmarksLayout";
 import { useUserSettings } from "@/lib/userSettings";
 import { cn } from "@/lib/utils";
@@ -512,6 +514,8 @@ function CompactView({
 
 function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
   const { showTitle } = useBookmarkDisplaySettings();
+  const iconSize = useCompactGridIconSize();
+  const metrics = COMPACT_GRID_SIZE_METRICS[iconSize];
   const userSettings = useUserSettings();
   const [faviconError, setFaviconError] = useState(false);
 
@@ -539,9 +543,10 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
   return (
     <div
       className={cn(
-        "group relative flex w-[76px] flex-col items-center rounded-xl p-1",
+        "group relative flex flex-col items-center rounded-xl p-1",
         className,
       )}
+      style={{ width: `${metrics.tileWidth}px` }}
       data-bookmark-index={bookmarkIndex}
     >
       <BulkEditSelectionOverlay bookmark={bookmark} />
@@ -574,32 +579,51 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
         target={target}
         rel="noreferrer"
         title={label}
-        className="flex flex-col items-center gap-1.5 focus:outline-none"
+        className="flex w-full flex-col items-center gap-1.5 overflow-hidden focus:outline-none"
       >
-        <div className="flex size-12 items-center justify-center rounded-xl border border-border/50 bg-card shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:shadow-md">
+        <div
+          className={cn(
+            "flex items-center justify-center border border-border/50 bg-card shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:shadow-md",
+            metrics.boxClass,
+          )}
+        >
           {bookmark.content.type === BookmarkTypes.LINK &&
             (bookmark.content.favicon && !faviconError ? (
               <Image
                 src={bookmark.content.favicon}
                 alt="favicon"
-                width={28}
-                height={28}
+                width={metrics.faviconPx}
+                height={metrics.faviconPx}
                 unoptimized
                 onError={() => setFaviconError(true)}
-                className="size-7 object-contain"
+                className={cn("object-contain", metrics.faviconClass)}
               />
             ) : (
-              <Globe className="size-6 text-muted-foreground" />
+              <Globe
+                className={cn(
+                  "text-muted-foreground",
+                  metrics.fallbackIconClass,
+                )}
+              />
             ))}
           {bookmark.content.type === BookmarkTypes.TEXT && (
-            <NotebookPen className="size-6 text-muted-foreground" />
+            <NotebookPen
+              className={cn("text-muted-foreground", metrics.fallbackIconClass)}
+            />
           )}
           {bookmark.content.type === BookmarkTypes.ASSET && (
-            <ImageIcon className="size-6 text-muted-foreground" />
+            <ImageIcon
+              className={cn("text-muted-foreground", metrics.fallbackIconClass)}
+            />
           )}
         </div>
         {showTitle && (
-          <span className="w-[72px] truncate text-center text-[11px] font-medium text-foreground">
+          <span
+            className={cn(
+              "block w-full truncate text-center font-normal text-foreground",
+              metrics.titleClass,
+            )}
+          >
             {label}
           </span>
         )}
