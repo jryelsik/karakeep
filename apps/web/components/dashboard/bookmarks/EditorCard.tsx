@@ -15,6 +15,7 @@ import {
   useBookmarkLayout,
   useBookmarkLayoutSwitch,
 } from "@/lib/userLocalSettings/bookmarksLayout";
+import { updateShowEditorCard } from "@/lib/userLocalSettings/userLocalSettings";
 import { cn, getOS } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -41,8 +42,6 @@ export default function EditorCard({ className }: { className?: string }) {
   const demoMode = !!useClientConfig().demoMode;
   const bookmarkLayout = useBookmarkLayout();
   const { showEditorCard } = useBookmarkDisplaySettings();
-  const [tempRevealed, setTempRevealed] = React.useState(false);
-  const isVisible = showEditorCard || tempRevealed;
   const isInline =
     bookmarkLayout === "list" ||
     bookmarkLayout === "compact" ||
@@ -62,18 +61,20 @@ export default function EditorCard({ className }: { className?: string }) {
   useHotkeys(
     "mod+e",
     () => {
-      if (!showEditorCard && tempRevealed) {
-        setTempRevealed(false);
-        return;
-      }
-      setTempRevealed(true);
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
+      const next = !showEditorCard;
+      void updateShowEditorCard(next);
     },
     { enableOnFormTags: true, preventDefault: true },
-    [showEditorCard, tempRevealed],
+    [showEditorCard],
   );
+
+  const prevShowRef = useRef(showEditorCard);
+  React.useEffect(() => {
+    if (showEditorCard && !prevShowRef.current) {
+      inputRef.current?.focus();
+    }
+    prevShowRef.current = showEditorCard;
+  }, [showEditorCard]);
 
   const { mutate, isPending } = useCreateBookmarkWithPostHook({
     onSuccess: (resp) => {
@@ -84,7 +85,6 @@ export default function EditorCard({ className }: { className?: string }) {
         });
       }
       form.reset();
-      setTempRevealed(false);
       if (isInline && inputRef?.current?.style) {
         inputRef.current.style.height = "auto";
       }
@@ -206,7 +206,7 @@ export default function EditorCard({ className }: { className?: string }) {
 
   const OS = getOS();
 
-  if (!isVisible) {
+  if (!showEditorCard) {
     return null;
   }
 
@@ -221,16 +221,6 @@ export default function EditorCard({ className }: { className?: string }) {
             : "flex-col gap-2 p-4",
           cardHeight,
         )}
-        onBlur={(e) => {
-          if (
-            !showEditorCard &&
-            !e.currentTarget.contains(e.relatedTarget as Node | null) &&
-            !form.getValues("text").trim() &&
-            !multiUrlImportState
-          ) {
-            setTempRevealed(false);
-          }
-        }}
         onSubmit={form.handleSubmit(onSubmit, onError)}
       >
         {!isInline && (
@@ -254,10 +244,6 @@ export default function EditorCard({ className }: { className?: string }) {
               )}
               placeholder={t("editor.placeholder_v2")}
               onKeyDown={(e) => {
-                if (e.key === "Escape" && !showEditorCard) {
-                  setTempRevealed(false);
-                  return;
-                }
                 if (demoMode) {
                   return;
                 }
