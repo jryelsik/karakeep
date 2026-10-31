@@ -279,9 +279,10 @@ export default function BookmarksGrid({
   const isCompactGrid = layout === "compact-grid";
   const children = [
     showEditorCard && !isCompactGrid && (
-      <StyledBookmarkCard key={"editor"}>
-        <EditorCard />
-      </StyledBookmarkCard>
+      <EditorCard
+        key={"editor"}
+        className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
+      />
     ),
     ...bookmarks.map((bookmark, index) => (
       <BookmarkGridItem
@@ -318,9 +319,10 @@ export default function BookmarksGrid({
         "compact-grid": (
           <div className="flex flex-col">
             {showEditorCard && (
-              <StyledBookmarkCard key={"editor"}>
-                <EditorCard />
-              </StyledBookmarkCard>
+              <EditorCard
+                key={"editor"}
+                className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
+              />
             )}
             <div ref={compactGridRef} className="w-full py-6">
               <div

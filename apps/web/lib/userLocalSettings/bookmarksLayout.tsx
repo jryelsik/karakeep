@@ -18,6 +18,7 @@ export const UserLocalSettingsCtx = createContext<
   showNotes: false,
   showTags: true,
   showTitle: true,
+  showEditorCard: true,
   imageFit: "cover",
 });
 
@@ -31,6 +32,7 @@ export function useBookmarkDisplaySettings() {
     showNotes: settings.showNotes,
     showTags: settings.showTags,
     showTitle: settings.showTitle,
+    showEditorCard: settings.showEditorCard,
     imageFit: settings.imageFit,
   };
 }

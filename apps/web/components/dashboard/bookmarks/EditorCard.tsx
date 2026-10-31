@@ -11,6 +11,7 @@ import BookmarkSavedToast from "@/components/utils/BookmarkSavedToast";
 import { useClientConfig } from "@/lib/clientConfig";
 import { useTranslation } from "@/lib/i18n/client";
 import {
+  useBookmarkDisplaySettings,
   useBookmarkLayout,
   useBookmarkLayoutSwitch,
 } from "@/lib/userLocalSettings/bookmarksLayout";
@@ -39,6 +40,14 @@ export default function EditorCard({ className }: { className?: string }) {
 
   const demoMode = !!useClientConfig().demoMode;
   const bookmarkLayout = useBookmarkLayout();
+  const { showEditorCard } = useBookmarkDisplaySettings();
+  const [tempRevealed, setTempRevealed] = React.useState(false);
+  const isVisible = showEditorCard || tempRevealed;
+  const isInline =
+    bookmarkLayout === "list" ||
+    bookmarkLayout === "compact" ||
+    bookmarkLayout === "compact-grid";
+
   const formSchema = z.object({
     text: z.string(),
   });
@@ -50,9 +59,21 @@ export default function EditorCard({ className }: { className?: string }) {
   });
   const { ref, ...textFieldProps } = form.register("text");
   useImperativeHandle(ref, () => inputRef.current);
-  useHotkeys("mod+e", () => {
-    inputRef.current?.focus();
-  });
+  useHotkeys(
+    "mod+e",
+    () => {
+      if (!showEditorCard && tempRevealed) {
+        setTempRevealed(false);
+        return;
+      }
+      setTempRevealed(true);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    },
+    { enableOnFormTags: true, preventDefault: true },
+    [showEditorCard, tempRevealed],
+  );
 
   const { mutate, isPending } = useCreateBookmarkWithPostHook({
     onSuccess: (resp) => {
@@ -63,8 +84,8 @@ export default function EditorCard({ className }: { className?: string }) {
         });
       }
       form.reset();
-      // if the list layout is used, we reset the size of the editor card to the original size after submitting
-      if (bookmarkLayout === "list" && inputRef?.current?.style) {
+      setTempRevealed(false);
+      if (isInline && inputRef?.current?.style) {
         inputRef.current.style.height = "auto";
       }
     },
@@ -97,8 +118,7 @@ export default function EditorCard({ className }: { className?: string }) {
   }
 
   const onInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    // Expand the textarea to a max of half the screen size in the list layout only
-    if (bookmarkLayout === "list") {
+    if (isInline) {
       const target = e.target as HTMLTextAreaElement;
       const maxHeight = window.innerHeight * 0.5;
       target.style.height = "auto";
@@ -186,32 +206,58 @@ export default function EditorCard({ className }: { className?: string }) {
 
   const OS = getOS();
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <Form {...form}>
       <form
         className={cn(
           className,
-          "relative flex flex-col gap-2 rounded-xl bg-card p-4",
+          "relative flex rounded-xl bg-card",
+          isInline
+            ? "flex-row items-center gap-3 px-3 py-2"
+            : "flex-col gap-2 p-4",
           cardHeight,
         )}
+        onBlur={(e) => {
+          if (
+            !showEditorCard &&
+            !e.currentTarget.contains(e.relatedTarget as Node | null) &&
+            !form.getValues("text").trim() &&
+            !multiUrlImportState
+          ) {
+            setTempRevealed(false);
+          }
+        }}
         onSubmit={form.handleSubmit(onSubmit, onError)}
       >
-        <div className="flex justify-between">
-          <p className="text-sm">{t("editor.new_item")}</p>
-          <Kbd>⌘ + E</Kbd>
-        </div>
-        <Separator />
+        {!isInline && (
+          <>
+            <div className="flex justify-between">
+              <p className="text-sm">{t("editor.new_item")}</p>
+              <Kbd>⌘ + E</Kbd>
+            </div>
+            <Separator />
+          </>
+        )}
         <FormItem className="flex-1">
           <FormControl>
             <Textarea
               ref={inputRef}
+              rows={isInline ? 1 : undefined}
               disabled={isPending}
               className={cn(
-                "h-full w-full border-none p-0 text-base font-light shadow-none focus-visible:ring-0 dark:bg-transparent md:text-base",
-                { "resize-none": bookmarkLayout !== "list" },
+                "w-full border-none p-0 text-base font-light shadow-none focus-visible:ring-0 dark:bg-transparent md:text-base",
+                isInline ? "min-h-0 resize-none py-1" : "h-full resize-none",
               )}
               placeholder={t("editor.placeholder_v2")}
               onKeyDown={(e) => {
+                if (e.key === "Escape" && !showEditorCard) {
+                  setTempRevealed(false);
+                  return;
+                }
                 if (demoMode) {
                   return;
                 }
@@ -236,11 +282,14 @@ export default function EditorCard({ className }: { className?: string }) {
             />
           </FormControl>
         </FormItem>
+        {isInline && <Kbd className="shrink-0">⌘ + E</Kbd>}
         <ActionButton
           disabled={!form.formState.dirtyFields.text}
           loading={isPending}
           type="submit"
           variant="secondary"
+          size={isInline ? "sm" : "default"}
+          className={cn(isInline && "shrink-0")}
         >
           {form.formState.dirtyFields.text
             ? demoMode
