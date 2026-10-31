@@ -2,7 +2,7 @@
 
 import type { BookmarksLayoutTypes } from "@/lib/userLocalSettings/types";
 import type { ReactNode } from "react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "@/lib/auth/client";
@@ -509,13 +509,10 @@ function CompactView({
   );
 }
 
-function CompactGridView({
-  bookmark,
-  className,
-  bookmarkIndex,
-}: Props) {
+function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
   const { showTitle } = useBookmarkDisplaySettings();
   const userSettings = useUserSettings();
+  const [faviconError, setFaviconError] = useState(false);
 
   const href =
     bookmark.content.type === BookmarkTypes.LINK &&
@@ -541,14 +538,14 @@ function CompactGridView({
   return (
     <div
       className={cn(
-        "group relative flex w-[110px] flex-col items-center rounded-xl p-2",
+        "group relative flex w-[76px] flex-col items-center rounded-xl p-1",
         className,
       )}
       data-bookmark-index={bookmarkIndex}
     >
       <BulkEditSelectionOverlay bookmark={bookmark} />
       <OwnerIndicator bookmark={bookmark} />
-      <div className="pointer-events-none absolute right-0.5 top-0.5 z-[60] hidden items-center gap-0.5 rounded bg-white/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-black/80 [@media(pointer:fine)]:pointer-events-auto [@media(pointer:fine)]:flex">
+      <div className="pointer-events-none absolute right-0 top-0 z-[60] hidden items-center gap-0.5 rounded bg-white/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-black/80 [@media(pointer:fine)]:pointer-events-auto [@media(pointer:fine)]:flex">
         <BookmarkOptions
           bookmark={bookmark}
           trigger={
@@ -557,7 +554,7 @@ function CompactGridView({
               className="rounded p-0.5 hover:bg-background/50"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal className="size-4 text-muted-foreground" />
+              <MoreHorizontal className="size-3.5 text-muted-foreground" />
             </button>
           }
         />
@@ -567,31 +564,32 @@ function CompactGridView({
         target={target}
         rel="noreferrer"
         title={label}
-        className="flex flex-col items-center gap-2 focus:outline-none"
+        className="flex flex-col items-center gap-1.5 focus:outline-none"
       >
-        <div className="flex size-16 items-center justify-center rounded-2xl border border-border/50 bg-card shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:shadow-md">
+        <div className="flex size-12 items-center justify-center rounded-xl border border-border/50 bg-card shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:shadow-md">
           {bookmark.content.type === BookmarkTypes.LINK &&
-            (bookmark.content.favicon ? (
+            (bookmark.content.favicon && !faviconError ? (
               <Image
                 src={bookmark.content.favicon}
                 alt="favicon"
-                width={36}
-                height={36}
+                width={28}
+                height={28}
                 unoptimized
-                className="size-9 object-contain"
+                onError={() => setFaviconError(true)}
+                className="size-7 object-contain"
               />
             ) : (
-              <Globe className="size-8 text-muted-foreground" />
+              <Globe className="size-6 text-muted-foreground" />
             ))}
           {bookmark.content.type === BookmarkTypes.TEXT && (
-            <NotebookPen className="size-8 text-muted-foreground" />
+            <NotebookPen className="size-6 text-muted-foreground" />
           )}
           {bookmark.content.type === BookmarkTypes.ASSET && (
-            <ImageIcon className="size-8 text-muted-foreground" />
+            <ImageIcon className="size-6 text-muted-foreground" />
           )}
         </div>
         {showTitle && (
-          <span className="w-[100px] truncate text-center text-xs font-medium text-foreground">
+          <span className="w-[72px] truncate text-center text-[11px] font-medium text-foreground">
             {label}
           </span>
         )}

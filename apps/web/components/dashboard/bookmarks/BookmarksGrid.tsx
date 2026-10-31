@@ -203,7 +203,7 @@ export default function BookmarksGrid({
     if (!el) return;
     const updateCols = () => {
       const width = el.clientWidth;
-      const fitCols = Math.max(1, Math.floor((width + 24) / (110 + 24)));
+      const fitCols = Math.max(1, Math.floor((width + 16) / (76 + 16)));
       setActiveCompactColumns(
         compactGridColumns === 0
           ? fitCols
@@ -324,14 +324,14 @@ export default function BookmarksGrid({
                 className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
               />
             )}
-            <div ref={compactGridRef} className="w-full py-6">
+            <div ref={compactGridRef} className="w-full py-4">
               <div
-                className="mx-auto grid justify-center gap-6"
+                className="mx-auto grid justify-center gap-4"
                 style={{
-                  gridTemplateColumns: "repeat(auto-fill, 110px)",
+                  gridTemplateColumns: "repeat(auto-fill, 76px)",
                   maxWidth:
                     compactGridColumns > 0
-                      ? `${compactGridColumns * 110 + (compactGridColumns - 1) * 24}px`
+                      ? `${compactGridColumns * 76 + (compactGridColumns - 1) * 16}px`
                       : undefined,
                 }}
               >
