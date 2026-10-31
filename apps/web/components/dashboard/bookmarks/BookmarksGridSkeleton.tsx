@@ -63,6 +63,7 @@ export default function BookmarksGridSkeleton({
         grid: "h-48",
         list: "h-32",
         compact: "h-4",
+        "compact-grid": "h-16",
       })}
     />
   ));
@@ -88,5 +89,6 @@ export default function BookmarksGridSkeleton({
     ),
     list: <div className="grid grid-cols-1">{children}</div>,
     compact: <div className="grid grid-cols-1">{children}</div>,
+    "compact-grid": <div className="grid grid-cols-6 gap-6">{children}</div>,
   });
 }

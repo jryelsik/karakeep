@@ -49,12 +49,14 @@
     "masonry": "Masonry",
     "grid": "Grid",
     "list": "List",
-    "compact": "Compact"
+    "compact": "Compact",
+    "compact-grid": "Compact Grid"
   },
   "view_options": {
     "title": "View Options",
     "layout": "Layout",
     "columns": "Columns",
+    "unlimited": "Unlimited",
     "display_options": "Display Options",
     "show_note_previews": "Show Notes",
     "show_tags": "Show Tags",

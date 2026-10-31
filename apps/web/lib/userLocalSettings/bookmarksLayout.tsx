@@ -14,6 +14,7 @@ export const UserLocalSettingsCtx = createContext<
   bookmarkGridLayout: defaultLayout,
   lang: fallbackLng,
   gridColumns: 3,
+  compactGridColumns: 6,
   showNotes: false,
   showTags: true,
   showTitle: true,
@@ -47,6 +48,11 @@ export function useInterfaceLang() {
 export function useGridColumns() {
   const settings = useUserLocalSettings();
   return settings.gridColumns;
+}
+
+export function useCompactGridColumns() {
+  const settings = useUserLocalSettings();
+  return settings.compactGridColumns;
 }
 
 export function bookmarkLayoutSwitch<T>(

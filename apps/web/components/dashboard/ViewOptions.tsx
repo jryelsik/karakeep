@@ -23,10 +23,13 @@ import { useTranslation } from "@/lib/i18n/client";
 import {
   useBookmarkDisplaySettings,
   useBookmarkLayout,
+  useCompactGridColumns,
   useGridColumns,
 } from "@/lib/userLocalSettings/bookmarksLayout";
+import { COMPACT_GRID_COLUMN_STEPS } from "@/lib/userLocalSettings/types";
 import {
   updateBookmarksLayout,
+  updateCompactGridColumns,
   updateGridColumns,
   updateImageFit,
   updateShowNotes,
@@ -35,6 +38,7 @@ import {
 } from "@/lib/userLocalSettings/userLocalSettings";
 import {
   Check,
+  Grip,
   Heading,
   Image,
   LayoutDashboard,
@@ -47,21 +51,29 @@ import {
   Tag,
 } from "lucide-react";
 
-type LayoutType = "masonry" | "grid" | "list" | "compact";
+type LayoutType = "masonry" | "grid" | "list" | "compact" | "compact-grid";
 
 const iconMap: Record<LayoutType, LucideIcon> = {
   masonry: LayoutDashboard,
   grid: LayoutGrid,
   list: LayoutList,
   compact: List,
+  "compact-grid": Grip,
 };
 
 export default function ViewOptions() {
   const { t } = useTranslation();
   const layout = useBookmarkLayout();
   const gridColumns = useGridColumns();
+  const compactGridColumns = useCompactGridColumns();
   const actualDisplaySettings = useBookmarkDisplaySettings();
   const [tempColumns, setTempColumns] = useState(gridColumns);
+  const [tempCompactStepIndex, setTempCompactStepIndex] = useState(() => {
+    const idx = COMPACT_GRID_COLUMN_STEPS.indexOf(
+      compactGridColumns as (typeof COMPACT_GRID_COLUMN_STEPS)[number],
+    );
+    return idx >= 0 ? idx : 5;
+  });
   const [, startTransition] = useTransition();
 
   // Optimistic state for all toggles
@@ -74,13 +86,23 @@ export default function ViewOptions() {
     actualDisplaySettings.imageFit,
   );
 
+  const isCompactGrid = optimisticLayout === "compact-grid";
   const showColumnSlider =
-    optimisticLayout === "grid" || optimisticLayout === "masonry";
+    optimisticLayout === "grid" ||
+    optimisticLayout === "masonry" ||
+    isCompactGrid;
 
   // Update temp value when actual value changes
   useEffect(() => {
     setTempColumns(gridColumns);
   }, [gridColumns]);
+
+  useEffect(() => {
+    const idx = COMPACT_GRID_COLUMN_STEPS.indexOf(
+      compactGridColumns as (typeof COMPACT_GRID_COLUMN_STEPS)[number],
+    );
+    setTempCompactStepIndex(idx >= 0 ? idx : 5);
+  }, [compactGridColumns]);
 
   // Handlers with optimistic updates
   const handleLayoutChange = (newLayout: LayoutType) => {
@@ -163,17 +185,37 @@ export default function ViewOptions() {
             <div className="px-2 pb-3 pt-1.5">
               <div className="mb-3 flex items-center justify-between text-xs font-medium text-muted-foreground">
                 <span>{t("view_options.columns")}</span>
-                <span>{tempColumns}</span>
+                <span>
+                  {isCompactGrid
+                    ? COMPACT_GRID_COLUMN_STEPS[tempCompactStepIndex] === 0
+                      ? t("view_options.unlimited")
+                      : COMPACT_GRID_COLUMN_STEPS[tempCompactStepIndex]
+                    : tempColumns}
+                </span>
               </div>
-              <Slider
-                value={[tempColumns]}
-                onValueChange={([value]) => setTempColumns(value)}
-                onValueCommit={([value]) => updateGridColumns(value)}
-                min={1}
-                max={6}
-                step={1}
-                className="w-full"
-              />
+              {isCompactGrid ? (
+                <Slider
+                  value={[tempCompactStepIndex]}
+                  onValueChange={([value]) => setTempCompactStepIndex(value)}
+                  onValueCommit={([value]) =>
+                    updateCompactGridColumns(COMPACT_GRID_COLUMN_STEPS[value])
+                  }
+                  min={0}
+                  max={COMPACT_GRID_COLUMN_STEPS.length - 1}
+                  step={1}
+                  className="w-full"
+                />
+              ) : (
+                <Slider
+                  value={[tempColumns]}
+                  onValueChange={([value]) => setTempColumns(value)}
+                  onValueCommit={([value]) => updateGridColumns(value)}
+                  min={1}
+                  max={6}
+                  step={1}
+                  className="w-full"
+                />
+              )}
             </div>
           </>
         )}

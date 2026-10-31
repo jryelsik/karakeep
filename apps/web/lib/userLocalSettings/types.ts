@@ -2,13 +2,24 @@ import { z } from "zod";
 
 export const USER_LOCAL_SETTINGS_COOKIE_NAME = "hoarder-user-local-settings";
 
-const zBookmarkGridLayout = z.enum(["grid", "list", "masonry", "compact"]);
+const zBookmarkGridLayout = z.enum([
+  "grid",
+  "list",
+  "masonry",
+  "compact",
+  "compact-grid",
+]);
 export type BookmarksLayoutTypes = z.infer<typeof zBookmarkGridLayout>;
+
+export const COMPACT_GRID_COLUMN_STEPS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 0,
+] as const;
 
 export const zUserLocalSettings = z.object({
   bookmarkGridLayout: zBookmarkGridLayout.optional().default("masonry"),
   lang: z.string().optional().default("en"),
   gridColumns: z.number().min(1).max(6).optional().default(3),
+  compactGridColumns: z.number().min(0).max(12).optional().default(6),
   showNotes: z.boolean().optional().default(false),
   showTags: z.boolean().optional().default(true),
   showTitle: z.boolean().optional().default(true),

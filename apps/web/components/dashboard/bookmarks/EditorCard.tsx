@@ -135,6 +135,7 @@ export default function EditorCard({ className }: { className?: string }) {
     masonry: "h-48",
     list: undefined,
     compact: undefined,
+    "compact-grid": undefined,
   });
 
   const handlePaste = async (

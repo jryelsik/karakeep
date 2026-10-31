@@ -43,6 +43,10 @@ export async function updateGridColumns(gridColumns: number) {
   await readModifyWrite(() => ({ gridColumns }));
 }
 
+export async function updateCompactGridColumns(compactGridColumns: number) {
+  await readModifyWrite(() => ({ compactGridColumns }));
+}
+
 export async function updateShowNotes(showNotes: boolean) {
   await readModifyWrite(() => ({ showNotes }));
 }

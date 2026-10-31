@@ -15,13 +15,16 @@ import {
   useBookmarkDisplaySettings,
   useBookmarkLayout,
 } from "@/lib/userLocalSettings/bookmarksLayout";
+import { useUserSettings } from "@/lib/userSettings";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
   Circle,
   CircleCheck,
+  Globe,
   GripVertical,
   Image as ImageIcon,
+  MoreHorizontal,
   NotebookPen,
 } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -40,6 +43,7 @@ import { switchCase } from "@karakeep/shared/utils/switch";
 
 import BookmarkActionBar from "./BookmarkActionBar";
 import BookmarkFormattedCreatedAt from "./BookmarkFormattedCreatedAt";
+import BookmarkOptions from "./BookmarkOptions";
 import BookmarkOwnerIcon from "./BookmarkOwnerIcon";
 import { ArchivedActionIcon, FavouritedActionIcon } from "./icons";
 import { NotePreview } from "./NotePreview";
@@ -505,6 +509,97 @@ function CompactView({
   );
 }
 
+function CompactGridView({
+  bookmark,
+  className,
+  bookmarkIndex,
+}: Props) {
+  const { showTitle } = useBookmarkDisplaySettings();
+  const userSettings = useUserSettings();
+
+  const href =
+    bookmark.content.type === BookmarkTypes.LINK &&
+    userSettings.bookmarkClickAction !== "expand_bookmark_preview"
+      ? bookmark.content.url
+      : `/dashboard/preview/${bookmark.id}`;
+  const target =
+    bookmark.content.type === BookmarkTypes.LINK &&
+    userSettings.bookmarkClickAction === "open_original_link"
+      ? ("_blank" as const)
+      : ("_self" as const);
+
+  let label = getBookmarkTitle(bookmark);
+  if (!label && bookmark.content.type === BookmarkTypes.LINK) {
+    try {
+      label = new URL(bookmark.content.url).host;
+    } catch {
+      label = bookmark.content.url;
+    }
+  }
+  label = label ?? "Untitled";
+
+  return (
+    <div
+      className={cn(
+        "group relative flex w-[110px] flex-col items-center rounded-xl p-2",
+        className,
+      )}
+      data-bookmark-index={bookmarkIndex}
+    >
+      <BulkEditSelectionOverlay bookmark={bookmark} />
+      <OwnerIndicator bookmark={bookmark} />
+      <div className="pointer-events-none absolute right-0.5 top-0.5 z-[60] hidden items-center gap-0.5 rounded bg-white/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 dark:bg-black/80 [@media(pointer:fine)]:pointer-events-auto [@media(pointer:fine)]:flex">
+        <BookmarkOptions
+          bookmark={bookmark}
+          trigger={
+            <button
+              type="button"
+              className="rounded p-0.5 hover:bg-background/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="size-4 text-muted-foreground" />
+            </button>
+          }
+        />
+      </div>
+      <Link
+        href={href}
+        target={target}
+        rel="noreferrer"
+        title={label}
+        className="flex flex-col items-center gap-2 focus:outline-none"
+      >
+        <div className="flex size-16 items-center justify-center rounded-2xl border border-border/50 bg-card shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:shadow-md">
+          {bookmark.content.type === BookmarkTypes.LINK &&
+            (bookmark.content.favicon ? (
+              <Image
+                src={bookmark.content.favicon}
+                alt="favicon"
+                width={36}
+                height={36}
+                unoptimized
+                className="size-9 object-contain"
+              />
+            ) : (
+              <Globe className="size-8 text-muted-foreground" />
+            ))}
+          {bookmark.content.type === BookmarkTypes.TEXT && (
+            <NotebookPen className="size-8 text-muted-foreground" />
+          )}
+          {bookmark.content.type === BookmarkTypes.ASSET && (
+            <ImageIcon className="size-8 text-muted-foreground" />
+          )}
+        </div>
+        {showTitle && (
+          <span className="w-[100px] truncate text-center text-xs font-medium text-foreground">
+            {label}
+          </span>
+        )}
+      </Link>
+    </div>
+  );
+}
+
 export function BookmarkLayoutAdaptingCard(props: Props) {
   const layout = useBookmarkLayout();
 
@@ -513,5 +608,6 @@ export function BookmarkLayoutAdaptingCard(props: Props) {
     grid: <GridView layout={layout} {...props} />,
     list: <ListView {...props} />,
     compact: <CompactView {...props} />,
+    "compact-grid": <CompactGridView {...props} />,
   });
 }

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import KeyboardShortcutsDialog from "@/components/dashboard/KeyboardShortcutsDialog";
 import NoBookmarksBanner from "@/components/dashboard/bookmarks/NoBookmarksBanner";
 import { ActionButton } from "@/components/ui/action-button";
@@ -11,6 +11,7 @@ import { useKeyboardNavigationStore } from "@/lib/store/useKeyboardNavigationSto
 import {
   bookmarkLayoutSwitch,
   useBookmarkLayout,
+  useCompactGridColumns,
   useGridColumns,
 } from "@/lib/userLocalSettings/bookmarksLayout";
 import { cn } from "@/lib/utils";
@@ -52,13 +53,30 @@ function StyledBookmarkCard({
 const BookmarkGridItem = memo(function BookmarkGridItem({
   bookmark,
   index,
+  borderless = false,
 }: {
   bookmark: ZBookmark;
   index: number;
+  borderless?: boolean;
 }) {
   const isFocused = useKeyboardNavigationStore(
     (state) => state.isNavigating && state.focusedIndex === index,
   );
+
+  if (borderless) {
+    return (
+      <ErrorBoundary fallback={<UnknownCard bookmark={bookmark} />}>
+        <BookmarkCard
+          bookmark={bookmark}
+          bookmarkIndex={index}
+          className={cn(
+            isFocused &&
+              "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          )}
+        />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary fallback={<UnknownCard bookmark={bookmark} />}>
@@ -159,7 +177,12 @@ export default function BookmarksGrid({
   const { t } = useTranslation();
   const layout = useBookmarkLayout();
   const gridColumns = useGridColumns();
+  const compactGridColumns = useCompactGridColumns();
   const activeGridColumns = useActiveGridColumns(gridColumns);
+  const compactGridRef = useRef<HTMLDivElement>(null);
+  const [activeCompactColumns, setActiveCompactColumns] = useState(
+    compactGridColumns || 6,
+  );
   const setVisibleBookmarks = useBulkActionsStore(
     (state) => state.setVisibleBookmarks,
   );
@@ -174,9 +197,32 @@ export default function BookmarksGrid({
   );
   const { ref: loadMoreRef, inView: loadMoreButtonInView } = useInView();
 
+  useEffect(() => {
+    if (layout !== "compact-grid") return;
+    const el = compactGridRef.current;
+    if (!el) return;
+    const updateCols = () => {
+      const width = el.clientWidth;
+      const fitCols = Math.max(1, Math.floor((width + 24) / (110 + 24)));
+      setActiveCompactColumns(
+        compactGridColumns === 0
+          ? fitCols
+          : Math.min(compactGridColumns, fitCols),
+      );
+    };
+    updateCols();
+    const ro = new ResizeObserver(updateCols);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [layout, compactGridColumns, bookmarks.length]);
+
   // For list/compact layouts, navigation is single-column
   const isListLayout = layout === "list" || layout === "compact";
-  const navColumns = isListLayout ? 1 : activeGridColumns;
+  const navColumns = isListLayout
+    ? 1
+    : layout === "compact-grid"
+      ? activeCompactColumns
+      : activeGridColumns;
 
   const {
     helpDialogOpen,
@@ -230,14 +276,20 @@ export default function BookmarksGrid({
     );
   }
 
+  const isCompactGrid = layout === "compact-grid";
   const children = [
-    showEditorCard && (
+    showEditorCard && !isCompactGrid && (
       <StyledBookmarkCard key={"editor"}>
         <EditorCard />
       </StyledBookmarkCard>
     ),
     ...bookmarks.map((bookmark, index) => (
-      <BookmarkGridItem key={bookmark.id} bookmark={bookmark} index={index} />
+      <BookmarkGridItem
+        key={bookmark.id}
+        bookmark={bookmark}
+        index={index}
+        borderless={isCompactGrid}
+      />
     )),
   ];
   return (
@@ -263,6 +315,29 @@ export default function BookmarksGrid({
         ),
         list: <div className="grid grid-cols-1">{children}</div>,
         compact: <div className="grid grid-cols-1">{children}</div>,
+        "compact-grid": (
+          <div className="flex flex-col">
+            {showEditorCard && (
+              <StyledBookmarkCard key={"editor"}>
+                <EditorCard />
+              </StyledBookmarkCard>
+            )}
+            <div ref={compactGridRef} className="w-full py-6">
+              <div
+                className="mx-auto grid justify-center gap-6"
+                style={{
+                  gridTemplateColumns: "repeat(auto-fill, 110px)",
+                  maxWidth:
+                    compactGridColumns > 0
+                      ? `${compactGridColumns * 110 + (compactGridColumns - 1) * 24}px`
+                      : undefined,
+                }}
+              >
+                {children}
+              </div>
+            </div>
+          </div>
+        ),
       })}
       {hasNextPage && (
         <div className="flex justify-center">

@@ -47,6 +47,7 @@ export default function TextCard({
             grid: null,
             masonry: null,
             compact: null,
+            "compact-grid": null,
             list: banner ? (
               <div className="relative size-full flex-1">
                 <Link href={`/dashboard/preview/${bookmark.id}`}>
