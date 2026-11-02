@@ -94,6 +94,10 @@ export function EditBookmarkDialog({
       bookmark.content.type === BookmarkTypes.LINK
         ? bookmark.content.url
         : undefined,
+    favicon:
+      bookmark.content.type === BookmarkTypes.LINK
+        ? (bookmark.content.favicon ?? "")
+        : undefined,
     description:
       bookmark.content.type === BookmarkTypes.LINK
         ? (bookmark.content.description ?? "")
@@ -198,6 +202,26 @@ export function EditBookmarkDialog({
                     <FormLabel>{t("common.url")}</FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {isLink && (
+              <FormField
+                control={form.control}
+                name="favicon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("bookmark_editor.favicon")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://example.com/favicon.ico"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

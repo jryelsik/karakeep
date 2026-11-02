@@ -1044,7 +1044,9 @@ const crawlAndParseUrl = traced(
         description: meta.description,
         // Don't store data URIs as they're not valid URLs and are usually quite large
         imageUrl: meta.image?.startsWith("data:") ? null : meta.image,
-        favicon: meta.logo,
+        favicon: meta.logo
+          ? sql`COALESCE(NULLIF(${bookmarkLinks.favicon}, ''), ${meta.logo})`
+          : bookmarkLinks.favicon,
         crawlStatusCode: statusCode,
         author: meta.author,
         publisher: meta.publisher,

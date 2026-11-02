@@ -111,3 +111,27 @@ export function getBookmarkTitle(bookmark: ZBookmark) {
 
   return bookmark.title ? bookmark.title : title;
 }
+
+const PRIVATE_HOST_REGEX =
+  /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|\[?::1\]?)$/i;
+
+export function getFallbackFaviconUrl(pageUrl: string): string | null {
+  try {
+    const parsed = new URL(pageUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    const host = parsed.hostname;
+    if (
+      !host ||
+      !host.includes(".") ||
+      host.endsWith(".local") ||
+      PRIVATE_HOST_REGEX.test(host)
+    ) {
+      return null;
+    }
+    return `https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(parsed.origin)}`;
+  } catch {
+    return null;
+  }
+}

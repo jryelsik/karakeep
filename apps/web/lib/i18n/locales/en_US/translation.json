@@ -117,6 +117,8 @@
     "more": "More",
     "replace_banner": "Replace Banner",
     "add_banner": "Add Banner",
+    "replace_favicon": "Replace Favicon",
+    "add_favicon": "Add Favicon",
     "download": "Download",
     "rename": "Rename"
   },
@@ -214,6 +216,7 @@
   "bookmark_editor": {
     "title": "Edit Bookmark",
     "subtitle": "Make changes to the bookmark details. Click save when you're done.",
+    "favicon": "Favicon URL",
     "author": "Author",
     "publisher": "Publisher",
     "date_published": "Date Published",

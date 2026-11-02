@@ -2,7 +2,7 @@
 
 import type { BookmarksLayoutTypes } from "@/lib/userLocalSettings/types";
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "@/lib/auth/client";
@@ -40,6 +40,7 @@ import { useTRPC } from "@karakeep/shared-react/trpc";
 import { BookmarkTypes } from "@karakeep/shared/types/bookmarks";
 import {
   getBookmarkTitle,
+  getFallbackFaviconUrl,
   isBookmarkStillTagging,
 } from "@karakeep/shared/utils/bookmarkUtils";
 import { switchCase } from "@karakeep/shared/utils/switch";
@@ -439,6 +440,30 @@ function GridView({
   );
 }
 
+function useResolvedFaviconUrl(
+  favicon: string | null | undefined,
+  pageUrl: string | undefined,
+) {
+  const [primaryFailed, setPrimaryFailed] = useState(false);
+  const [fallbackFailed, setFallbackFailed] = useState(false);
+
+  useEffect(() => {
+    setPrimaryFailed(false);
+    setFallbackFailed(false);
+  }, [favicon, pageUrl]);
+
+  const primary = favicon?.trim() || null;
+  const fallback = pageUrl ? getFallbackFaviconUrl(pageUrl) : null;
+
+  if (primary && !primaryFailed) {
+    return { src: primary, onError: () => setPrimaryFailed(true) };
+  }
+  if (fallback && fallback !== primary && !fallbackFailed) {
+    return { src: fallback, onError: () => setFallbackFailed(true) };
+  }
+  return { src: null, onError: undefined };
+}
+
 function CompactView({
   bookmark,
   title,
@@ -449,6 +474,14 @@ function CompactView({
   const { showTitle } = useBookmarkDisplaySettings();
   const isBulkEditEnabled = useBulkActionsStore(
     (state) => state.isBulkEditEnabled,
+  );
+  const favicon = useResolvedFaviconUrl(
+    bookmark.content.type === BookmarkTypes.LINK
+      ? bookmark.content.favicon
+      : null,
+    bookmark.content.type === BookmarkTypes.LINK
+      ? bookmark.content.url
+      : undefined,
   );
   return (
     <div
@@ -464,16 +497,19 @@ function CompactView({
       <div className="flex h-full justify-between gap-2 overflow-hidden p-2">
         <div className="flex items-center gap-2">
           {bookmark.content.type === BookmarkTypes.LINK &&
-            bookmark.content.favicon && (
+            (favicon.src ? (
               <Image
-                src={bookmark.content.favicon}
+                src={favicon.src}
                 alt="favicon"
                 width={5}
                 unoptimized
                 height={5}
-                className="size-5"
+                onError={favicon.onError}
+                className="size-5 object-contain"
               />
-            )}
+            ) : (
+              <Globe className="size-5 text-muted-foreground" />
+            ))}
           {bookmark.content.type === BookmarkTypes.TEXT && (
             <NotebookPen className="size-5" />
           )}
@@ -517,7 +553,14 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
   const iconSize = useCompactGridIconSize();
   const metrics = COMPACT_GRID_SIZE_METRICS[iconSize];
   const userSettings = useUserSettings();
-  const [faviconError, setFaviconError] = useState(false);
+  const favicon = useResolvedFaviconUrl(
+    bookmark.content.type === BookmarkTypes.LINK
+      ? bookmark.content.favicon
+      : null,
+    bookmark.content.type === BookmarkTypes.LINK
+      ? bookmark.content.url
+      : undefined,
+  );
 
   const href =
     bookmark.content.type === BookmarkTypes.LINK &&
@@ -588,14 +631,14 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
           )}
         >
           {bookmark.content.type === BookmarkTypes.LINK &&
-            (bookmark.content.favicon && !faviconError ? (
+            (favicon.src ? (
               <Image
-                src={bookmark.content.favicon}
+                src={favicon.src}
                 alt="favicon"
                 width={metrics.faviconPx}
                 height={metrics.faviconPx}
                 unoptimized
-                onError={() => setFaviconError(true)}
+                onError={favicon.onError}
                 className={cn("object-contain", metrics.faviconClass)}
               />
             ) : (

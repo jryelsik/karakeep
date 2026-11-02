@@ -31,4 +31,24 @@ describe("metascraperSafeFavicon", () => {
 
     expect(meta.logo).toBe("https://example.com/icon-256.png");
   });
+
+  test("prefers <link rel='icon'> over larger <meta name='msapplication-TileImage'>", async () => {
+    const parser = metascraper([metascraperSafeFavicon()]);
+    const meta = await parser({
+      url: "https://globe.adsbexchange.com/",
+      html: `
+        <html>
+          <head>
+            <link rel="icon" href="images/cropped-Stealth-1-192x192.png" sizes="192x192" />
+            <meta name="msapplication-TileImage" content="images/cropped-Stealth-1-270x270.png" />
+          </head>
+        </html>
+      `,
+      validateUrl: false,
+    });
+
+    expect(meta.logo).toBe(
+      "https://globe.adsbexchange.com/images/cropped-Stealth-1-192x192.png",
+    );
+  });
 });

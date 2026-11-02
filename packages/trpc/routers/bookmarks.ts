@@ -578,6 +578,7 @@ export const bookmarksAppRouter = router({
         // Update link-specific fields if any are provided
         const linkUpdateData: Partial<{
           url: string;
+          favicon: string | null;
           description: string | null;
           author: string | null;
           publisher: string | null;
@@ -586,6 +587,9 @@ export const bookmarksAppRouter = router({
         }> = {};
         if (input.url) {
           linkUpdateData.url = input.url.trim();
+        }
+        if (input.favicon !== undefined) {
+          linkUpdateData.favicon = input.favicon?.trim() || null;
         }
         if (input.description !== undefined) {
           linkUpdateData.description = input.description;

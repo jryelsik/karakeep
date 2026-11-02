@@ -1545,6 +1545,10 @@
                     "type": "string",
                     "format": "uri"
                   },
+                  "favicon": {
+                    "type": "string",
+                    "nullable": true
+                  },
                   "description": {
                     "type": "string",
                     "nullable": true

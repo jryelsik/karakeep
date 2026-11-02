@@ -321,6 +321,7 @@ export const zUpdateBookmarksRequestSchema = z.object({
     .meta({ type: "string", format: "date-time" }),
   // Link specific fields (optional)
   url: zBookmarkUrlSchema.optional(),
+  favicon: z.string().nullish(),
   description: z.string().nullish(),
   author: z.string().nullish(),
   publisher: z.string().nullish(),

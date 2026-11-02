@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,10 @@ import { useTranslation } from "@/lib/i18n/client";
 import { BookOpen, ExternalLink, Globe2 } from "lucide-react";
 
 import type { ZBookmarkedLink } from "@karakeep/shared/types/bookmarks";
-import { getBookmarkLinkImageUrl } from "@karakeep/shared/utils/bookmarkUtils";
+import {
+  getBookmarkLinkImageUrl,
+  getFallbackFaviconUrl,
+} from "@karakeep/shared/utils/bookmarkUtils";
 
 function hostname(url: string) {
   try {
@@ -25,6 +29,22 @@ export default function SavedPageOverview({
   const { t } = useTranslation();
   const image = getBookmarkLinkImageUrl(link);
   const readerAvailable = link.readerViewStatus !== "unavailable";
+  const [primaryFailed, setPrimaryFailed] = useState(false);
+  const [fallbackFailed, setFallbackFailed] = useState(false);
+
+  useEffect(() => {
+    setPrimaryFailed(false);
+    setFallbackFailed(false);
+  }, [link.favicon, link.url]);
+
+  const primaryFavicon = link.favicon?.trim() || null;
+  const fallbackFavicon = getFallbackFaviconUrl(link.url);
+  const resolvedFavicon =
+    primaryFavicon && !primaryFailed
+      ? primaryFavicon
+      : fallbackFavicon && !fallbackFailed
+        ? fallbackFavicon
+        : null;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -50,14 +70,21 @@ export default function SavedPageOverview({
           <div className="space-y-6 p-5 sm:p-8">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {link.favicon ? (
+                {resolvedFavicon ? (
                   <Image
-                    src={link.favicon}
+                    src={resolvedFavicon}
                     alt=""
                     width={16}
                     height={16}
                     unoptimized
-                    className="rounded-sm"
+                    onError={() => {
+                      if (resolvedFavicon === primaryFavicon) {
+                        setPrimaryFailed(true);
+                      } else {
+                        setFallbackFailed(true);
+                      }
+                    }}
+                    className="rounded-sm object-contain"
                   />
                 ) : (
                   <Globe2 className="size-4" />

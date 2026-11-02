@@ -154,6 +154,7 @@ export default function BookmarkOptions({
     isEditBookmarkDialogOpen;
 
   const bannerFileInputRef = useRef<HTMLInputElement>(null);
+  const faviconFileInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate: uploadBannerAsset } = useUpload({
     onError: (e) => {
@@ -272,6 +273,62 @@ export default function BookmarkOptions({
         });
       }
     }
+  };
+
+  // ponytail: stores uploaded favicons as compact <=64x64 data URIs in bookmarkLinks.favicon; upgrade to asset storage if multi-MB favicons are ever needed
+  const handleFaviconFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rawDataUri = reader.result as string;
+      if (file.size <= 4096 || file.type === "image/svg+xml") {
+        updateBookmarkMutator.mutate({
+          bookmarkId: bookmark.id,
+          favicon: rawDataUri,
+        });
+        return;
+      }
+      const img = new window.Image();
+      img.onload = () => {
+        const size = 64;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          updateBookmarkMutator.mutate({
+            bookmarkId: bookmark.id,
+            favicon: rawDataUri,
+          });
+          return;
+        }
+        const scale = Math.min(size / img.width, size / img.height, 1);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        ctx.drawImage(
+          img,
+          Math.round((size - w) / 2),
+          Math.round((size - h) / 2),
+          w,
+          h,
+        );
+        updateBookmarkMutator.mutate({
+          bookmarkId: bookmark.id,
+          favicon: canvas.toDataURL("image/png"),
+        });
+      };
+      img.onerror = () => {
+        updateBookmarkMutator.mutate({
+          bookmarkId: bookmark.id,
+          favicon: rawDataUri,
+        });
+      };
+      img.src = rawDataUri;
+    };
+    reader.readAsDataURL(file);
   };
 
   // Define action items array
@@ -502,6 +559,18 @@ export default function BookmarkOptions({
             disabled: demoMode || isAttaching || isReplacing,
             onClick: () => bannerFileInputRef.current?.click(),
           },
+          {
+            id: "replace-favicon",
+            title:
+              bookmark.content.type === BookmarkTypes.LINK &&
+              bookmark.content.favicon
+                ? t("actions.replace_favicon")
+                : t("actions.add_favicon"),
+            icon: <ImagePlus className="size-4" />,
+            visible: bookmark.content.type === BookmarkTypes.LINK,
+            disabled: demoMode || updateBookmarkMutator.isPending,
+            onClick: () => faviconFileInputRef.current?.click(),
+          },
         ],
       },
     ],
@@ -631,6 +700,13 @@ export default function BookmarkOptions({
         onChange={handleBannerFileChange}
         className="hidden"
         accept=".jpg,.jpeg,.png,.webp"
+      />
+      <input
+        type="file"
+        ref={faviconFileInputRef}
+        onChange={handleFaviconFileChange}
+        className="hidden"
+        accept=".ico,.png,.jpg,.jpeg,.webp,.svg,image/*"
       />
     </>
   );
