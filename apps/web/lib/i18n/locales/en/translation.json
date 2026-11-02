@@ -130,7 +130,8 @@
       "title": "Sort",
       "relevant_first": "Most Relevant First",
       "newest_first": "Newest First",
-      "oldest_first": "Oldest First"
+      "oldest_first": "Oldest First",
+      "custom": "Custom Order"
     },
     "load_more": "Load More"
   },

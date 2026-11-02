@@ -26,7 +26,7 @@ export default function UpdatableBookmarksGrid({
 }) {
   const api = useTRPC();
   let sortOrder = useSortOrderStore((state) => state.sortOrder);
-  if (sortOrder === "relevance") {
+  if (sortOrder === "relevance" || sortOrder === "custom") {
     // Relevance is not supported in the `getBookmarks` endpoint.
     sortOrder = "desc";
   }
