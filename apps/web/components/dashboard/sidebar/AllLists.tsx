@@ -12,6 +12,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { BOOKMARK_DRAG_MIME } from "@/lib/bookmark-drag";
 import { useTranslation } from "@/lib/i18n/client";
+import { useSidebarCollapsed } from "@/lib/userLocalSettings/bookmarksLayout";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal, Plus } from "lucide-react";
 
@@ -173,6 +174,7 @@ export default function AllLists({
   initialData: { lists: ZBookmarkList[] };
 }) {
   const { t } = useTranslation();
+  const collapsed = useSidebarCollapsed();
   const pathName = usePathname();
   const isNodeOpen = useCallback(
     (node: ZBookmarkListTreeNode) => pathName.includes(node.item.id),
@@ -212,15 +214,29 @@ export default function AllLists({
   }, [isViewingSharedList, sharedListsOpen]);
 
   return (
-    <ul className="sidebar-scrollbar max-h-full gap-y-2 overflow-auto text-sm">
-      <li className="flex justify-between pb-3">
-        <p className="pl-2 text-xs uppercase tracking-wider text-muted-foreground">
-          Lists
-        </p>
+    <ul className="sidebar-scrollbar max-h-full w-full gap-y-2 overflow-auto text-sm">
+      <li
+        className={cn(
+          "flex pb-3",
+          collapsed ? "justify-center" : "justify-between",
+        )}
+      >
+        {!collapsed && (
+          <p className="pl-2 text-xs uppercase tracking-wider text-muted-foreground">
+            Lists
+          </p>
+        )}
         <EditListModal>
-          <button type="button" aria-label={t("lists.new_list")}>
+          <button
+            type="button"
+            aria-label={t("lists.new_list")}
+            title={t("lists.new_list")}
+          >
             <Plus
-              className="mr-2 size-4 text-muted-foreground"
+              className={cn(
+                "size-4 text-muted-foreground",
+                !collapsed && "mr-2",
+              )}
               strokeWidth={1.5}
             />
           </button>

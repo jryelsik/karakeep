@@ -36,6 +36,7 @@ export const zUserLocalSettings = z.object({
   showTitle: z.boolean().optional().default(true),
   showEditorCard: z.boolean().optional().default(true),
   imageFit: z.enum(["cover", "contain"]).optional().default("cover"),
+  sidebarCollapsed: z.boolean().optional().default(false),
 });
 
 export type UserLocalSettings = z.infer<typeof zUserLocalSettings>;

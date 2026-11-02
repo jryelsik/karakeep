@@ -3,6 +3,7 @@ import { TFunction } from "i18next";
 
 import serverConfig from "@karakeep/shared/config";
 
+import SidebarContainer from "./SidebarContainer";
 import SidebarItem from "./SidebarItem";
 import SidebarVersion from "./SidebarVersion";
 import { TSidebarItem } from "./TSidebarItem";
@@ -18,8 +19,8 @@ export default async function Sidebar({
   const { t } = await useTranslation();
 
   return (
-    <aside className="flex h-[calc(100vh-64px)] w-60 flex-col gap-5 p-4 xl:w-72">
-      <div>
+    <SidebarContainer>
+      <div className="w-full">
         <ul className="space-y-2 text-sm">
           {items(t).map((item) => (
             <SidebarItem
@@ -36,6 +37,6 @@ export default async function Sidebar({
         serverVersion={serverConfig.serverVersion}
         changeLogVersion={serverConfig.changelogVersion}
       />
-    </aside>
+    </SidebarContainer>
   );
 }

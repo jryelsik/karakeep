@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useClientConfig } from "@/lib/clientConfig";
 import { useTranslation } from "@/lib/i18n/client";
+import { useSidebarCollapsed } from "@/lib/userLocalSettings/bookmarksLayout";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -65,6 +66,7 @@ export default function SidebarVersion({
 }: SidebarVersionProps) {
   const { disableNewReleaseCheck } = useClientConfig();
   const { t } = useTranslation();
+  const collapsed = useSidebarCollapsed();
 
   const effectiveChangelogVersion = changeLogVersion ?? serverVersion;
   const stableRelease = isStableRelease(effectiveChangelogVersion);
@@ -184,6 +186,10 @@ export default function SidebarVersion({
     },
     [markReleaseAsSeen],
   );
+
+  if (collapsed) {
+    return null;
+  }
 
   if (!stableRelease || disableNewReleaseCheck) {
     return (

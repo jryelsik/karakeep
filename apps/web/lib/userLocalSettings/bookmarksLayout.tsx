@@ -84,6 +84,7 @@ export const UserLocalSettingsCtx = createContext<
   showTitle: true,
   showEditorCard: true,
   imageFit: "cover",
+  sidebarCollapsed: false,
 });
 
 function useUserLocalSettings() {
@@ -124,6 +125,11 @@ export function useCompactGridColumns() {
 export function useCompactGridIconSize() {
   const settings = useUserLocalSettings();
   return settings.compactGridIconSize;
+}
+
+export function useSidebarCollapsed() {
+  const settings = useUserLocalSettings();
+  return settings.sidebarCollapsed;
 }
 
 export function bookmarkLayoutSwitch<T>(

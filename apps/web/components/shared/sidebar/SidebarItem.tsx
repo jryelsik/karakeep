@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSidebarCollapsed } from "@/lib/userLocalSettings/bookmarksLayout";
 import { cn } from "@/lib/utils";
 
 export default function SidebarItem({
@@ -35,6 +36,7 @@ export default function SidebarItem({
   onDragLeave?: React.DragEventHandler;
 }) {
   const currentPath = usePathname();
+  const collapsed = useSidebarCollapsed();
   return (
     <li
       className={cn(
@@ -45,28 +47,28 @@ export default function SidebarItem({
         dropHighlight && "bg-accent ring-2 ring-primary",
         className,
       )}
-      style={style}
+      style={collapsed ? undefined : style}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
     >
       <div className="flex flex-1 items-center">
-        {collapseButton}
+        {!collapsed && collapseButton}
         <Link
           href={path}
+          title={name}
           className={cn(
             "flex flex-1 items-center gap-x-2 rounded-[inherit] px-3 py-2",
             linkClassName,
+            collapsed && "justify-center px-2 py-2",
           )}
         >
           {logo}
-          <span title={name} className="line-clamp-1 break-all">
-            {name}
-          </span>
+          {!collapsed && <span className="line-clamp-1 break-all">{name}</span>}
         </Link>
       </div>
-      {right}
+      {!collapsed && right}
     </li>
   );
 }
