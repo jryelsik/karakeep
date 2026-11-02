@@ -6,7 +6,8 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 # Keep Corepack current enough to verify modern pnpm release signatures.
-RUN npm install -g corepack@latest && corepack enable pnpm
+# Pinned so the build doesn't pick up whatever corepack was published last.
+RUN npm install -g corepack@0.36.0 && corepack enable pnpm
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -33,7 +34,6 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/trpc/package.json ./packages/trpc/
 COPY tooling/github/package.json ./tooling/github/
 COPY tooling/oxlint/package.json ./tooling/oxlint/
-COPY tooling/prettier/package.json ./tooling/prettier/
 COPY tooling/tailwind/package.json ./tooling/tailwind/
 COPY tooling/typescript/package.json ./tooling/typescript/
 COPY ./patches ./patches
@@ -41,6 +41,8 @@ COPY ./patches ./patches
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN pnpm install --frozen-lockfile
+
+ENV pnpm_config_verify_deps_before_run=error
 
 COPY . .
 
