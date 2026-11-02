@@ -17,7 +17,7 @@ env:
 
 jobs:
   actions-lock:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -32,7 +32,7 @@ jobs:
         run: gh actions-lock --verify
 
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.1
         with:
@@ -45,7 +45,7 @@ jobs:
         run: pnpm lint && pnpm exec sherif
 
   format:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.1
         with:
@@ -58,7 +58,7 @@ jobs:
         run: pnpm format
 
   typecheck:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.1
         with:
@@ -70,7 +70,7 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
   tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.1
         with:
@@ -116,7 +116,7 @@ jobs:
           path: packages/e2e_tests/setup/docker-logs/
           retention-days: 7
   open-api-spec:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.1
         with:
