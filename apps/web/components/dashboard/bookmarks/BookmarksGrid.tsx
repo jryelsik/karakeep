@@ -1,13 +1,16 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import KeyboardShortcutsDialog from "@/components/dashboard/KeyboardShortcutsDialog";
 import NoBookmarksBanner from "@/components/dashboard/bookmarks/NoBookmarksBanner";
 import { ActionButton } from "@/components/ui/action-button";
 import ActionConfirmingDialog from "@/components/ui/action-confirming-dialog";
+import { BOOKMARK_DRAG_MIME } from "@/lib/bookmark-drag";
 import useBulkActionsStore from "@/lib/bulkActions";
 import { useBookmarkKeyboardNavigation } from "@/lib/hooks/useBookmarkKeyboardNavigation";
 import { useTranslation } from "@/lib/i18n/client";
 import { useInBookmarkGridStore } from "@/lib/store/useInBookmarkGridStore";
 import { useKeyboardNavigationStore } from "@/lib/store/useKeyboardNavigationStore";
+import { useSortOrderStore } from "@/lib/store/useSortOrderStore";
 import {
   bookmarkLayoutSwitch,
   COMPACT_GRID_SIZE_METRICS,
@@ -177,7 +180,19 @@ export default function BookmarksGrid({
   fetchNextPage?: () => void;
 }) {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const layout = useBookmarkLayout();
+  const isCompactGrid = layout === "compact-grid";
+  const sortOrder = useSortOrderStore((state) => state.sortOrder);
+  const customOrders = useSortOrderStore((state) => state.customOrders);
+  const reorderCompactGrid = useSortOrderStore(
+    (state) => state.reorderCompactGrid,
+  );
+  const isBulkEditEnabled = useBulkActionsStore(
+    (state) => state.isBulkEditEnabled,
+  );
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const gridColumns = useGridColumns();
   const compactGridColumns = useCompactGridColumns();
   const compactGridIconSize = useCompactGridIconSize();
@@ -201,6 +216,26 @@ export default function BookmarksGrid({
   );
   const { ref: loadMoreRef, inView: loadMoreButtonInView } = useInView();
 
+  const viewKey = withinListContext?.id
+    ? `list:${withinListContext.id}`
+    : pathname || "default";
+
+  // ponytail: sorts loaded pages client-side in compact-grid; upgrade to server-side ordering if cross-page manual sorting is needed
+  const orderedBookmarks = useMemo(() => {
+    if (!isCompactGrid || sortOrder !== "custom") return bookmarks;
+    const savedOrder = customOrders[viewKey];
+    if (!savedOrder?.length) return bookmarks;
+    const pos = new Map(savedOrder.map((id, i) => [id, i]));
+    return [...bookmarks].sort((a, b) => {
+      const ia = pos.get(a.id) ?? -1;
+      const ib = pos.get(b.id) ?? -1;
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return -1;
+      if (ib === -1) return 1;
+      return ia - ib;
+    });
+  }, [bookmarks, customOrders, isCompactGrid, sortOrder, viewKey]);
+
   useEffect(() => {
     if (layout !== "compact-grid") return;
     const el = compactGridRef.current;
@@ -222,7 +257,7 @@ export default function BookmarksGrid({
     const ro = new ResizeObserver(updateCols);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [layout, compactGridColumns, compactMetrics, bookmarks.length]);
+  }, [layout, compactGridColumns, compactMetrics, orderedBookmarks.length]);
 
   // For list/compact layouts, navigation is single-column
   const isListLayout = layout === "list" || layout === "compact";
@@ -242,7 +277,7 @@ export default function BookmarksGrid({
     confirmDelete,
     isDeletePending,
   } = useBookmarkKeyboardNavigation({
-    bookmarks,
+    bookmarks: orderedBookmarks,
     columns: navColumns,
     hasNextPage,
     isFetchingNextPage,
@@ -250,14 +285,19 @@ export default function BookmarksGrid({
   });
 
   useEffect(() => {
-    setVisibleBookmarks(bookmarks);
+    setVisibleBookmarks(orderedBookmarks);
     setListContext(withinListContext);
 
     return () => {
       setVisibleBookmarks([]);
       setListContext(undefined);
     };
-  }, [bookmarks, setListContext, setVisibleBookmarks, withinListContext]);
+  }, [
+    orderedBookmarks,
+    setListContext,
+    setVisibleBookmarks,
+    withinListContext,
+  ]);
 
   useEffect(() => {
     setInBookmarkGrid(true);
@@ -272,7 +312,7 @@ export default function BookmarksGrid({
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, loadMoreButtonInView]);
 
-  if (bookmarks.length == 0 && !showEditorCard) {
+  if (orderedBookmarks.length == 0 && !showEditorCard) {
     return (
       <>
         <NoBookmarksBanner />
@@ -284,7 +324,6 @@ export default function BookmarksGrid({
     );
   }
 
-  const isCompactGrid = layout === "compact-grid";
   const children = [
     showEditorCard && !isCompactGrid && (
       <EditorCard
@@ -292,7 +331,7 @@ export default function BookmarksGrid({
         className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
       />
     ),
-    ...bookmarks.map((bookmark, index) => (
+    ...orderedBookmarks.map((bookmark, index) => (
       <BookmarkGridItem
         key={bookmark.id}
         bookmark={bookmark}
@@ -344,7 +383,66 @@ export default function BookmarksGrid({
                       : undefined,
                 }}
               >
-                {children}
+                {orderedBookmarks.map((bookmark, index) => (
+                  <div
+                    key={bookmark.id}
+                    draggable={!isBulkEditEnabled}
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      e.dataTransfer.setData(BOOKMARK_DRAG_MIME, bookmark.id);
+                      e.dataTransfer.effectAllowed = "copyMove";
+                      setDraggedId(bookmark.id);
+                    }}
+                    onDragOver={(e) => {
+                      if (!draggedId || draggedId === bookmark.id) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverId !== bookmark.id) {
+                        setDragOverId(bookmark.id);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverId === bookmark.id) {
+                        setDragOverId(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      const fromId =
+                        draggedId || e.dataTransfer.getData(BOOKMARK_DRAG_MIME);
+                      setDraggedId(null);
+                      setDragOverId(null);
+                      if (!fromId || fromId === bookmark.id) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      reorderCompactGrid(
+                        viewKey,
+                        orderedBookmarks.map((b) => b.id),
+                        fromId,
+                        bookmark.id,
+                      );
+                    }}
+                    onDragEnd={() => {
+                      setDraggedId(null);
+                      setDragOverId(null);
+                    }}
+                    className={cn(
+                      "rounded-xl transition-opacity",
+                      !isBulkEditEnabled &&
+                        "cursor-grab active:cursor-grabbing",
+                      draggedId === bookmark.id && "opacity-40",
+                      dragOverId === bookmark.id &&
+                        draggedId !== bookmark.id &&
+                        "ring-2 ring-primary",
+                    )}
+                  >
+                    <BookmarkGridItem
+                      bookmark={bookmark}
+                      index={index}
+                      borderless
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>

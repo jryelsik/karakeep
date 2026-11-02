@@ -12,12 +12,15 @@ import { useBookmarkSearchState } from "@/lib/hooks/bookmark-search";
 import { useTranslation } from "@/lib/i18n/client";
 import { useInSearchPageStore } from "@/lib/store/useInSearchPageStore";
 import { useSortOrderStore } from "@/lib/store/useSortOrderStore";
-import { Check, ListFilter, SortAsc, SortDesc } from "lucide-react";
+import { useBookmarkLayout } from "@/lib/userLocalSettings/bookmarksLayout";
+import { Check, Grip, ListFilter, SortAsc, SortDesc } from "lucide-react";
 
 export default function SortOrderToggle() {
   const { t } = useTranslation();
   const isInSearchPage = useInSearchPageStore((state) => state.inSearchPage);
   const { effectiveSearchMode } = useBookmarkSearchState();
+  const layout = useBookmarkLayout();
+  const isCompactGrid = layout === "compact-grid";
 
   const { sortOrder: currentSort, setSortOrder } = useSortOrderStore();
 
@@ -28,7 +31,10 @@ export default function SortOrderToggle() {
       // reset to default sort order
       setSortOrder("desc");
     }
-  }, [isInSearchPage, currentSort, setSortOrder]);
+    if (!isCompactGrid && currentSort === "custom") {
+      setSortOrder("desc");
+    }
+  }, [isInSearchPage, isCompactGrid, currentSort, setSortOrder]);
 
   if (isInSearchPage && effectiveSearchMode !== "fts") {
     return null;
@@ -50,6 +56,9 @@ export default function SortOrderToggle() {
           )}
           {currentSort === "desc" && (
             <SortDesc className="size-[18px]" size={18} />
+          )}
+          {currentSort === "custom" && (
+            <Grip className="size-[18px]" size={18} />
           )}
         </ButtonWithTooltip>
       </DropdownMenuTrigger>
@@ -86,6 +95,18 @@ export default function SortOrderToggle() {
           </div>
           {currentSort === "asc" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
+        {isCompactGrid && (
+          <DropdownMenuItem
+            className="cursor-pointer justify-between"
+            onClick={() => setSortOrder("custom")}
+          >
+            <div className="flex items-center">
+              <Grip size={16} className="mr-2" />
+              <span>{t("actions.sort.custom")}</span>
+            </div>
+            {currentSort === "custom" && <Check className="ml-2 h-4 w-4" />}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

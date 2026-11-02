@@ -622,6 +622,7 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
         target={target}
         rel="noreferrer"
         title={label}
+        draggable={false}
         className="flex w-full flex-col items-center gap-1.5 overflow-hidden focus:outline-none"
       >
         <div
@@ -638,6 +639,7 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
                 width={metrics.faviconPx}
                 height={metrics.faviconPx}
                 unoptimized
+                draggable={false}
                 onError={favicon.onError}
                 className={cn("object-contain", metrics.faviconClass)}
               />

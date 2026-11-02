@@ -138,7 +138,9 @@ export function useBookmarkSearch() {
   const { searchQuery, effectiveSearchMode } = useBookmarkSearchState();
   const sortOrder = useSortOrderStore((state) => state.sortOrder);
   const effectiveSortOrder =
-    effectiveSearchMode === "fts" ? sortOrder : ("relevance" as const);
+    effectiveSearchMode === "fts" && sortOrder !== "custom"
+      ? sortOrder
+      : ("relevance" as const);
 
   const {
     data,
