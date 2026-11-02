@@ -95,7 +95,9 @@ it("deletes a bookmark after confirmation", async ({ page }) => {
   await expect(bookmark).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByPlaceholder("Paste a link, write a note or drop an image…"),
+    page
+      .locator("main")
+      .getByPlaceholder("Paste a link, write a note or drop an image…"),
   ).toBeVisible();
   await expect(bookmark).toHaveCount(0);
 });
