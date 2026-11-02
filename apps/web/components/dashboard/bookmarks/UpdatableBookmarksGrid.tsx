@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import UploadDropzone from "@/components/dashboard/UploadDropzone";
 import { useSortOrderStore } from "@/lib/store/useSortOrderStore";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -33,15 +32,18 @@ export default function UpdatableBookmarksGrid({
 
   const finalQuery = { ...query, sortOrder, includeContent: false };
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
       api.bookmarks.getBookmarks.infiniteQueryOptions(
         { ...finalQuery, useCursorV2: true },
         {
-          initialData: () => ({
-            pages: [initialBookmarks],
-            pageParams: [query.cursor ?? null],
-          }),
+          initialData:
+            sortOrder === "desc"
+              ? () => ({
+                  pages: [initialBookmarks],
+                  pageParams: [query.cursor ?? null],
+                })
+              : undefined,
           initialCursor: null,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
           refetchOnMount: true,
@@ -49,13 +51,16 @@ export default function UpdatableBookmarksGrid({
       ),
     );
 
-  useEffect(() => {
-    refetch();
-  }, [sortOrder, refetch]);
+  const pages = data?.pages ?? [initialBookmarks];
+
+  // Deduplicate across pages in case initialData/cursor pages overlap
+  const uniqueBookmarks = Array.from(
+    new Map(pages.flatMap((b) => b.bookmarks).map((b) => [b.id, b])).values(),
+  );
 
   const grid = (
     <BookmarksGrid
-      bookmarks={data.pages.flatMap((b) => b.bookmarks)}
+      bookmarks={uniqueBookmarks}
       hasNextPage={hasNextPage}
       fetchNextPage={fetchNextPage}
       isFetchingNextPage={isFetchingNextPage}
