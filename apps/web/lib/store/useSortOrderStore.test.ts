@@ -28,4 +28,23 @@ describe("useSortOrderStore", () => {
       "b",
     ]);
   });
+
+  it("defaults sortOrder to custom only when view has a saved custom order in compact grid", () => {
+    useSortOrderStore.setState({
+      sortOrder: "desc",
+      customOrders: { "list:1": ["b", "a"] },
+    });
+
+    // View with saved order in compact grid -> defaults to custom
+    useSortOrderStore.getState().syncViewDefaultSort("list:1", true);
+    expect(useSortOrderStore.getState().sortOrder).toBe("custom");
+
+    // Navigating to a view without a saved order -> resets to desc
+    useSortOrderStore.getState().syncViewDefaultSort("list:2", true);
+    expect(useSortOrderStore.getState().sortOrder).toBe("desc");
+
+    // Non-compact-grid layout does not switch to custom
+    useSortOrderStore.getState().syncViewDefaultSort("list:1", false);
+    expect(useSortOrderStore.getState().sortOrder).toBe("desc");
+  });
 });
