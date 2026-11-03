@@ -185,6 +185,9 @@ export default function BookmarksGrid({
   const isCompactGrid = layout === "compact-grid";
   const sortOrder = useSortOrderStore((state) => state.sortOrder);
   const customOrders = useSortOrderStore((state) => state.customOrders);
+  const syncViewDefaultSort = useSortOrderStore(
+    (state) => state.syncViewDefaultSort,
+  );
   const reorderCompactGrid = useSortOrderStore(
     (state) => state.reorderCompactGrid,
   );
@@ -219,6 +222,10 @@ export default function BookmarksGrid({
   const viewKey = withinListContext?.id
     ? `list:${withinListContext.id}`
     : pathname || "default";
+
+  useEffect(() => {
+    syncViewDefaultSort(viewKey, isCompactGrid);
+  }, [viewKey, isCompactGrid, syncViewDefaultSort]);
 
   // ponytail: sorts loaded pages client-side in compact-grid; upgrade to server-side ordering if cross-page manual sorting is needed
   const orderedBookmarks = useMemo(() => {

@@ -41,6 +41,7 @@ interface SortOrderState {
   sortOrder: ClientSortOrder;
   customOrders: Record<string, string[]>;
   setSortOrder: (sortOrder: ClientSortOrder) => void;
+  syncViewDefaultSort: (viewKey: string, isCompactGrid: boolean) => void;
   reorderCompactGrid: (
     viewKey: string,
     visibleIds: string[],
@@ -53,6 +54,22 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
   sortOrder: "desc", // default sort order
   customOrders: loadCustomOrders(),
   setSortOrder: (sortOrder) => set({ sortOrder }),
+  syncViewDefaultSort: (viewKey, isCompactGrid) =>
+    set((state) => {
+      const customOrders = Object.keys(state.customOrders).length
+        ? state.customOrders
+        : loadCustomOrders();
+      const hasCustomOrder = Boolean(customOrders[viewKey]?.length);
+      if (isCompactGrid) {
+        if (hasCustomOrder) {
+          return { customOrders, sortOrder: "custom" };
+        }
+        if (state.sortOrder === "custom") {
+          return { customOrders, sortOrder: "desc" };
+        }
+      }
+      return { customOrders };
+    }),
   reorderCompactGrid: (viewKey, visibleIds, fromId, toId) =>
     set((state) => {
       const current = Object.keys(state.customOrders).length
