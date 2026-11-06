@@ -205,6 +205,7 @@ export type ZReaderFontFamily = z.infer<typeof zReaderFontFamilySchema>;
 export const zUserSettingsSchema = z.object({
   bookmarkClickAction: z.enum([
     "open_original_link",
+    "open_original_link_same_tab",
     "expand_bookmark_preview",
   ]),
   archiveDisplayBehaviour: z.enum(["show", "hide"]),
