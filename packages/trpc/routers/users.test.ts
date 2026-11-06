@@ -315,6 +315,15 @@ describe("User Routes", () => {
       tagStyle: "lowercase-underscores",
     });
 
+    // Update bookmarkClickAction to open_original_link_same_tab
+    await caller.users.updateSettings({
+      bookmarkClickAction: "open_original_link_same_tab",
+    });
+    const sameTabSettings = await caller.users.settings();
+    expect(sameTabSettings.bookmarkClickAction).toBe(
+      "open_original_link_same_tab",
+    );
+
     // Test invalid update (e.g., empty input, if schema enforces it)
     await expect(() => caller.users.updateSettings({})).rejects.toThrow(
       /No settings provided/,

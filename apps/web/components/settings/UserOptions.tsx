@@ -81,6 +81,9 @@ export default function UserOptions() {
     open_original_link: t(
       "settings.info.user_settings.bookmark_click_action.open_external_url",
     ),
+    open_original_link_same_tab: t(
+      "settings.info.user_settings.bookmark_click_action.open_external_url_same_tab",
+    ),
     expand_bookmark_preview: t(
       "settings.info.user_settings.bookmark_click_action.open_bookmark_details",
     ),
