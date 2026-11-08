@@ -4,6 +4,7 @@ import { expect } from "playwright/test";
 import { BookmarkTypes } from "@karakeep/shared/types/bookmarks";
 
 import {
+  bookmarkCards,
   bookmarkEditor,
   createWebTestUser,
   it,
@@ -20,7 +21,7 @@ async function seedBookmark(page: Page) {
     text: "A bookmark for the weekend",
   });
   await signIn(page, email);
-  const bookmark = page.locator("[data-bookmark-index]");
+  const bookmark = bookmarkCards(page);
   await expect(bookmark).toHaveCount(1);
   return bookmark;
 }
@@ -33,7 +34,7 @@ it(
     await signIn(page, email);
     await bookmarkEditor(page).fill("http://nginx/hello.html");
     await page.getByRole("button", { name: /^Save/ }).click();
-    const cards = page.locator("[data-bookmark-index]");
+    const cards = bookmarkCards(page);
     await expect(cards).toHaveCount(1);
 
     // Crawling and search indexing happen asynchronously in the workers.
@@ -57,8 +58,13 @@ it(
     );
     await search.fill("My test title");
     await search.press("Enter");
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("q"))
+      .toBe("My test title");
     await expect(page).toHaveURL(/\/dashboard\/search\?/);
-    await expect(cards.filter({ hasText: "My test title" })).toBeVisible();
+    await expect(cards.filter({ hasText: "My test title" })).toBeVisible({
+      timeout: 30000,
+    });
     await expect(cards).toHaveCount(1);
   },
 );
