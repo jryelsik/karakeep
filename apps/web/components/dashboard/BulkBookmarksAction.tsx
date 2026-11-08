@@ -108,6 +108,7 @@ export default function BulkBookmarksAction() {
     if (!isClipboardAvailable()) {
       toast({
         description: `Copying is only available over https`,
+        variant: "destructive",
       });
       return;
     }
@@ -293,6 +294,7 @@ export default function BulkBookmarksAction() {
 
           return (
             <ActionButtonWithTooltip
+              aria-label={name}
               className={className}
               tooltip={name}
               disabled={disabled}
@@ -321,7 +323,7 @@ export default function BulkBookmarksAction() {
       <ActionConfirmingDialog
         open={isDeleteDialogOpen}
         setOpen={setIsDeleteDialogOpen}
-        title={"Delete Bookmarks"}
+        title={t("dialogs.bookmarks.bulk_delete_title")}
         description={<p>Are you sure you want to delete these bookmarks?</p>}
         actionButton={() => (
           <ActionButton

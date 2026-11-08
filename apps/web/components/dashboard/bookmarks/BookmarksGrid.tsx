@@ -464,7 +464,7 @@ export default function BookmarksGrid({
             onClick={() => fetchNextPage()}
             variant="ghost"
           >
-            Load More
+            {t("actions.load_more")}
           </ActionButton>
         </div>
       )}
