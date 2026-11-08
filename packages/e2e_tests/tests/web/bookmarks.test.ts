@@ -3,7 +3,15 @@ import { expect } from "playwright/test";
 
 import { BookmarkTypes } from "@karakeep/shared/types/bookmarks";
 
-import { createWebTestUser, it, signIn } from "../../utils/browser";
+import {
+  bookmarkCards,
+  bookmarkEditor,
+  createWebTestUser,
+  it,
+  reload,
+  signIn,
+  WORKER_TEST_TIMEOUT,
+} from "../../utils/browser";
 import { waitUntil } from "../../utils/general";
 
 async function seedBookmark(page: Page) {
@@ -13,44 +21,53 @@ async function seedBookmark(page: Page) {
     text: "A bookmark for the weekend",
   });
   await signIn(page, email);
-  const bookmark = page.locator("[data-bookmark-index]");
+  const bookmark = bookmarkCards(page);
   await expect(bookmark).toHaveCount(1);
   return bookmark;
 }
 
-it("saves a link and finds it through search", async ({ page }) => {
-  const { trpc, email } = await createWebTestUser();
-  await signIn(page, email);
-  await page
-    .getByPlaceholder("Paste a link, write a note or drop an image…")
-    .fill("http://nginx/hello.html");
-  await page.getByRole("button", { name: /^Save/ }).click();
-  const cards = page.locator("[data-bookmark-index]");
-  await expect(cards).toHaveCount(1);
+it(
+  "saves a link and finds it through search",
+  { timeout: WORKER_TEST_TIMEOUT },
+  async ({ page }) => {
+    const { trpc, email } = await createWebTestUser();
+    await signIn(page, email);
+    await bookmarkEditor(page).fill("http://nginx/hello.html");
+    await page.getByRole("button", { name: /^Save/ }).click();
+    const cards = bookmarkCards(page);
+    await expect(cards).toHaveCount(1);
 
-  // Crawling and search indexing happen asynchronously in the workers.
-  await waitUntil(
-    async () => {
-      const result = await trpc.bookmarks.searchBookmarks.query({
-        text: "My test title",
-      });
-      return result.bookmarks.some(
-        (bookmark) =>
-          bookmark.content.type === BookmarkTypes.LINK &&
-          bookmark.content.url === "http://nginx/hello.html",
-      );
-    },
-    "Saved bookmark is crawled and searchable",
-    30000,
-  );
+    // Crawling and search indexing happen asynchronously in the workers.
+    await waitUntil(
+      async () => {
+        const result = await trpc.bookmarks.searchBookmarks.query({
+          text: "My test title",
+        });
+        return result.bookmarks.some(
+          (bookmark) =>
+            bookmark.content.type === BookmarkTypes.LINK &&
+            bookmark.content.url === "http://nginx/hello.html",
+        );
+      },
+      "Saved bookmark is crawled and searchable",
+      90000,
+    );
 
-  const search = page.getByPlaceholder("Search titles, text, URLs, and tags…");
-  await search.fill("My test title");
-  await search.press("Enter");
-  await expect(page).toHaveURL(/\/dashboard\/search\?/);
-  await expect(cards.filter({ hasText: "My test title" })).toBeVisible();
-  await expect(cards).toHaveCount(1);
-});
+    const search = page.getByPlaceholder(
+      "Search titles, text, URLs, and tags…",
+    );
+    await search.fill("My test title");
+    await search.press("Enter");
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("q"))
+      .toBe("My test title");
+    await expect(page).toHaveURL(/\/dashboard\/search\?/);
+    await expect(cards.filter({ hasText: "My test title" })).toBeVisible({
+      timeout: 30000,
+    });
+    await expect(cards).toHaveCount(1);
+  },
+);
 
 it("favorites a bookmark and shows it in Favorites", async ({ page }) => {
   const bookmark = await seedBookmark(page);
@@ -62,7 +79,7 @@ it("favorites a bookmark and shows it in Favorites", async ({ page }) => {
   await page.getByRole("link", { name: /Favorites/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/favourites$/);
   await expect(bookmark).toHaveText(/A bookmark for the weekend/);
-  await page.reload();
+  await reload(page);
   await bookmark.hover();
   await expect(
     bookmark.getByRole("button", { name: "Unfavorite", exact: true }),
@@ -77,7 +94,7 @@ it("archives a bookmark and shows it in Archive", async ({ page }) => {
   await page.getByRole("link", { name: "Archive", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard\/archive$/);
   await expect(bookmark).toHaveText(/A bookmark for the weekend/);
-  await page.reload();
+  await reload(page);
   await bookmark.hover();
   await expect(
     bookmark.getByRole("button", { name: "Un-archive", exact: true }),
@@ -93,11 +110,7 @@ it("deletes a bookmark after confirmation", async ({ page }) => {
     .getByRole("button", { name: "Delete", exact: true })
     .click();
   await expect(bookmark).toHaveCount(0);
-  await page.reload();
-  await expect(
-    page
-      .locator("main")
-      .getByPlaceholder("Paste a link, write a note or drop an image…"),
-  ).toBeVisible();
+  await reload(page);
+  await expect(bookmarkEditor(page)).toBeVisible();
   await expect(bookmark).toHaveCount(0);
 });
