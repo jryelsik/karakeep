@@ -164,7 +164,7 @@ it("creates a text note from the editor card", async ({ page }) => {
   });
 });
 
-it("favourites the selected bookmarks in bulk", async ({ page }) => {
+it("favorites the selected bookmarks in bulk", async ({ page }) => {
   const texts = ["Bulk one", "Bulk two", "Left alone"];
   const user = await seedTextBookmarks(texts);
   await signInAndWaitForCards(page, user.email, user.ids.length);
@@ -176,7 +176,7 @@ it("favourites the selected bookmarks in bulk", async ({ page }) => {
   const bookmarks = await getBookmarks(user, user.ids);
   expect(bookmarks.map((b) => b.favourited)).toEqual([true, true, false]);
 
-  await page.getByRole("link", { name: /Favourites/ }).click();
+  await page.getByRole("link", { name: /Favorites/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/favourites$/);
   await expect(bookmarkCards(page)).toHaveCount(2);
   await expect(cardWithText(page, "Left alone")).toHaveCount(0);
