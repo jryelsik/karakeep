@@ -79,7 +79,9 @@ it(
     const card = bookmarkCards(page);
     await expect(card).toHaveCount(1);
     await card.locator('button[aria-haspopup="menu"]').click();
-    await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
+    await page
+      .getByRole("menuitem", { name: "Edit details", exact: true })
+      .click();
     const dialog = page.getByRole("dialog", { name: "Edit details" });
 
     await dialog.getByRole("button", { name: "Remove obsolete" }).click();
@@ -97,7 +99,10 @@ it(
       await tagInput.fill("conference-2026");
       // The tag doesn't exist yet, so the only option is the one creating it.
       await page
-        .getByRole("option", { name: "conference-2026", exact: true })
+        .getByRole("option", {
+          name: 'Create "conference-2026"',
+          exact: true,
+        })
         .click({ timeout: 2000 });
     });
     await expect(

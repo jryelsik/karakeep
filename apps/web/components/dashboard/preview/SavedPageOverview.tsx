@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   getFallbackFaviconUrl,
 } from "@karakeep/shared/utils/bookmarkUtils";
 
-function hostname(url: string) {
+export function hostname(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
@@ -19,32 +19,81 @@ function hostname(url: string) {
   }
 }
 
-export default function SavedPageOverview({
-  link,
-  onSelectSection,
-}: {
-  link: ZBookmarkedLink;
-  onSelectSection: (section: string) => void;
-}) {
-  const { t } = useTranslation();
-  const image = getBookmarkLinkImageUrl(link);
-  const readerAvailable = link.readerViewStatus !== "unavailable";
+/**
+ * For images that keep their shape inside a positioned box. Sizing the element to
+ * the image, rather than filling the box and letterboxing inside it, means the
+ * backing only shows through transparent pixels: opaque images hide it, and a
+ * white logo that would vanish on a light card sits on a tile instead.
+ */
+export const CONTAINED_IMAGE_CLASS =
+  "absolute inset-0 m-auto h-auto max-h-full w-auto max-w-full bg-muted-foreground/30";
+
+/** Renders nothing once the icon fails, so no blank slot is left behind. */
+function Favicon({ src, pageUrl }: { src?: string | null; pageUrl: string }) {
   const [primaryFailed, setPrimaryFailed] = useState(false);
   const [fallbackFailed, setFallbackFailed] = useState(false);
 
   useEffect(() => {
     setPrimaryFailed(false);
     setFallbackFailed(false);
-  }, [link.favicon, link.url]);
+  }, [src, pageUrl]);
 
-  const primaryFavicon = link.favicon?.trim() || null;
-  const fallbackFavicon = getFallbackFaviconUrl(link.url);
-  const resolvedFavicon =
-    primaryFavicon && !primaryFailed
-      ? primaryFavicon
-      : fallbackFavicon && !fallbackFailed
-        ? fallbackFavicon
+  const primary = src?.trim() || null;
+  const fallback = getFallbackFaviconUrl(pageUrl);
+  const resolved =
+    primary && !primaryFailed
+      ? primary
+      : fallback && !fallbackFailed
+        ? fallback
         : null;
+
+  const failCurrent = useCallback(() => {
+    if (primary && !primaryFailed) {
+      setPrimaryFailed(true);
+    } else {
+      setFallbackFailed(true);
+    }
+  }, [primary, primaryFailed]);
+
+  // An image that failed before hydration never reports it to onError.
+  const checkLoaded = useCallback(
+    (image: HTMLImageElement | null) => {
+      if (image?.complete && image.naturalWidth === 0) {
+        failCurrent();
+      }
+    },
+    [failCurrent],
+  );
+  if (!resolved) {
+    return null;
+  }
+  return (
+    <Image
+      ref={checkLoaded}
+      src={resolved}
+      alt=""
+      width={16}
+      height={16}
+      unoptimized
+      className="rounded-sm object-contain"
+      onError={failCurrent}
+    />
+  );
+}
+
+export default function SavedPageOverview({
+  link,
+  title,
+  onSelectSection,
+}: {
+  link: ZBookmarkedLink;
+  // The user's title for the bookmark, if they renamed it
+  title?: string | null;
+  onSelectSection: (section: string) => void;
+}) {
+  const { t } = useTranslation();
+  const image = getBookmarkLinkImageUrl(link);
+  const readerAvailable = link.readerViewStatus !== "unavailable";
 
   return (
     <div className="h-full overflow-y-auto">
@@ -55,10 +104,10 @@ export default function SavedPageOverview({
               <Image
                 src={image.url}
                 alt=""
-                fill
+                width={0}
+                height={0}
                 unoptimized
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 768px"
+                className={CONTAINED_IMAGE_CLASS}
               />
             </div>
           ) : (
@@ -70,29 +119,11 @@ export default function SavedPageOverview({
           <div className="space-y-6 p-5 sm:p-8">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {resolvedFavicon ? (
-                  <Image
-                    src={resolvedFavicon}
-                    alt=""
-                    width={16}
-                    height={16}
-                    unoptimized
-                    onError={() => {
-                      if (resolvedFavicon === primaryFavicon) {
-                        setPrimaryFailed(true);
-                      } else {
-                        setFallbackFailed(true);
-                      }
-                    }}
-                    className="rounded-sm object-contain"
-                  />
-                ) : (
-                  <Globe2 className="size-4" />
-                )}
+                <Favicon src={link.favicon} pageUrl={link.url} />
                 <span className="truncate">{hostname(link.url)}</span>
               </div>
               <h2 className="text-balance text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-                {link.title || hostname(link.url)}
+                {title || link.title || hostname(link.url)}
               </h2>
               {link.description ? (
                 <p className="max-w-2xl text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
@@ -102,8 +133,8 @@ export default function SavedPageOverview({
             </div>
 
             <div className="flex flex-nowrap items-center gap-2">
-              <Button asChild size="sm">
-                <Link href={link.url} target="_blank" rel="noreferrer">
+              <Button asChild size="sm" className="max-sm:h-11 sm:hidden">
+                <Link href={link.url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-4" />
                   {t("preview.view_original")}
                 </Link>
@@ -112,6 +143,7 @@ export default function SavedPageOverview({
                 <Button
                   variant="outline"
                   size="sm"
+                  className="max-sm:h-11"
                   onClick={() => onSelectSection("cached")}
                 >
                   <BookOpen className="size-4" />

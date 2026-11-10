@@ -37,14 +37,10 @@ it("adds a bookmark through the list dialog and finds it in the list", async ({
     .getByRole("menuitem", { name: "Manage lists", exact: true })
     .click();
   const dialog = page.getByRole("dialog", { name: "Manage lists" });
-  await dialog.getByRole("combobox").click();
-  await page.getByRole("option", { name: /Weekend reading/ }).click();
-  await expect(dialog.getByRole("listitem")).toContainText("Weekend reading");
-  // Both the footer button and the corner icon are named Close.
-  await dialog
-    .getByRole("button", { name: "Close", exact: true })
-    .first()
-    .click();
+  const option = dialog.getByRole("option", { name: /Weekend reading/ });
+  await option.click();
+  await expect(option).toHaveAttribute("aria-checked", "true");
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).not.toBeVisible();
 
   await page.getByRole("link", { name: /Weekend reading/ }).click();
@@ -91,8 +87,10 @@ it("creates a list from the sidebar and shows it on All Lists", async ({
   await sidebarOf(page).getByRole("button", { name: "New list" }).click();
   const dialog = page.getByRole("dialog", { name: "New list" });
   await dialog.getByPlaceholder("List name").fill("Recipes to try");
-  await dialog.getByPlaceholder("Description").fill("Dinner ideas");
-  await dialog.getByRole("button", { name: "Create", exact: true }).click();
+  await dialog.getByLabel("Description (optional)").fill("Dinner ideas");
+  await dialog
+    .getByRole("button", { name: "Create list", exact: true })
+    .click();
   await expect(dialog).not.toBeVisible();
 
   await expect(
@@ -140,7 +138,9 @@ it("creates a nested list under a parent list", async ({ page }) => {
   await expect(
     dialog.getByRole("combobox").filter({ hasText: "Travel" }),
   ).toBeVisible();
-  await dialog.getByRole("button", { name: "Create", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Create list", exact: true })
+    .click();
   await expect(dialog).not.toBeVisible();
   await expect(
     page.getByRole("heading", { level: 1, name: "Japan trip" }),
@@ -169,8 +169,11 @@ it("creates a nested list under a parent list", async ({ page }) => {
     .filter({ has: page.getByRole("link", { name: /Travel/ }) });
   await expect(parentRow).toBeVisible();
   await expect(main.getByRole("link", { name: /Japan trip/ })).toHaveCount(0);
-  // The expand chevron is an svg acting as the collapsible trigger.
-  const expand = parentRow.locator("svg[aria-expanded]");
+  // The expand chevron is a button acting as the collapsible trigger. The ⋯
+  // menu trigger also has aria-expanded, but it's marked as a popup.
+  const expand = parentRow.locator(
+    "button[aria-expanded]:not([aria-haspopup])",
+  );
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expand.click();
   await expect(expand).toHaveAttribute("aria-expanded", "true");
@@ -242,8 +245,13 @@ it("creates a smart list that shows only matching bookmarks", async ({
   await dialog.getByPlaceholder("List name").fill("Weekend plans");
   await dialog.getByRole("combobox").filter({ hasText: "Manual list" }).click();
   await page.getByRole("option", { name: "Smart list", exact: true }).click();
-  await dialog.getByPlaceholder("Search query").fill("#weekend");
-  await dialog.getByRole("button", { name: "Create", exact: true }).click();
+  await dialog.getByRole("combobox", { name: "Tags" }).click();
+  await page.getByRole("option", { name: "weekend", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(dialog.getByText("1 bookmark matches")).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Create list", exact: true })
+    .click();
   await expect(dialog).not.toBeVisible();
 
   await expect(
@@ -261,7 +269,7 @@ it("creates a smart list that shows only matching bookmarks", async ({
   await expect(cards).toHaveCount(1);
   const { lists } = await trpc.lists.list.query();
   expect(lists).toHaveLength(1);
-  expect(lists[0]).toMatchObject({ type: "smart", query: "#weekend" });
+  expect(lists[0]).toMatchObject({ type: "smart", query: "tag:weekend" });
 });
 
 it("renames and then deletes a list from its options menu", async ({

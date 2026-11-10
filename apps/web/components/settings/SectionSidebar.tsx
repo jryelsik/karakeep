@@ -1,3 +1,4 @@
+import SidebarContainer from "@/components/shared/sidebar/SidebarContainer";
 import SidebarItem from "@/components/shared/sidebar/SidebarItem";
 import SidebarVersion from "@/components/shared/sidebar/SidebarVersion";
 import { useTranslation } from "@/lib/i18n/server";
@@ -17,8 +18,8 @@ export default async function SectionSidebar({
   const { t } = await useTranslation();
 
   return (
-    <aside className="flex h-[calc(100vh-64px)] w-60 flex-col gap-4 overflow-y-auto p-4 xl:w-72">
-      <ul className="text-sm">
+    <SidebarContainer className="gap-4 overflow-y-auto">
+      <ul className="w-full text-sm">
         <SidebarItem
           logo={<ArrowLeft className="size-4" />}
           name={t("settings.back_to_app")}
@@ -26,7 +27,7 @@ export default async function SectionSidebar({
         />
       </ul>
       {groups.map((group, index) => (
-        <div key={group.label ?? index} className="space-y-1">
+        <div key={group.label ?? index} className="w-full space-y-1">
           {group.label && (
             <h2 className="px-3 text-xs font-medium text-muted-foreground">
               {group.label}
@@ -39,6 +40,7 @@ export default async function SectionSidebar({
                 logo={item.icon}
                 name={item.name}
                 path={item.path}
+                matchSubPaths
               />
             ))}
           </ul>
@@ -48,6 +50,6 @@ export default async function SectionSidebar({
         serverVersion={serverConfig.serverVersion}
         changeLogVersion={serverConfig.changelogVersion}
       />
-    </aside>
+    </SidebarContainer>
   );
 }

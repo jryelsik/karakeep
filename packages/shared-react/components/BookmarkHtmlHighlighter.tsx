@@ -82,6 +82,7 @@ const HighlightForm: React.FC<HighlightFormProps> = ({
       <PopoverAnchor virtualRef={anchorRef} />
       <PopoverContent
         side={isMobile ? "bottom" : "top"}
+        collisionPadding={12}
         className="w-80 space-y-3 p-3"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
@@ -92,6 +93,9 @@ const HighlightForm: React.FC<HighlightFormProps> = ({
               <Button
                 size="none"
                 key={color}
+                // English like the rest of this popover
+                aria-label={color.charAt(0).toUpperCase() + color.slice(1)}
+                aria-pressed={selectedColor === color}
                 onClick={() => setSelectedColor(color)}
                 variant="none"
                 className={cn(
@@ -518,14 +522,12 @@ const BookmarkHTMLHighlighter = forwardRef<
           setMenuPosition({ x: 0, y: 0 });
           return;
         }
-        const startOffset =
-          getTextNodeOffset(range.startContainer) + range.startOffset;
-        const endOffset =
-          getTextNodeOffset(range.endContainer) + range.endOffset;
+        const highlight = buildHighlightFromRange(range, "yellow");
         const current = pendingRef.current;
         if (
-          current?.startOffset === startOffset &&
-          current.endOffset === endOffset
+          !highlight ||
+          (current?.startOffset === highlight.startOffset &&
+            current.endOffset === highlight.endOffset)
         ) {
           return;
         }
@@ -540,13 +542,7 @@ const BookmarkHTMLHighlighter = forwardRef<
           }
         }
         setSelectedHighlight(null);
-        setPendingHighlight({
-          id: "NOT_SET",
-          startOffset,
-          endOffset,
-          color: "yellow",
-          text: range.toString(),
-        });
+        setPendingHighlight(highlight);
         setMenuPosition({ x: 0, y: 0 });
       }, SELECTION_SETTLE_MS);
     };
@@ -557,7 +553,21 @@ const BookmarkHTMLHighlighter = forwardRef<
     };
   }, [dockFormAt, readOnly]);
 
-  const handlePointerUp = (e: React.PointerEvent) => {
+  // A drag that selects text often ends past it, in the margin or below the
+  // article, so the release is heard on the document.
+  const handlePointerDown = () => {
+    const release = new AbortController();
+    const onRelease = (e: PointerEvent) => {
+      release.abort();
+      if (e.type === "pointerup") {
+        handlePointerUp(e);
+      }
+    };
+    document.addEventListener("pointerup", onRelease, release);
+    document.addEventListener("pointercancel", onRelease, release);
+  };
+
+  const handlePointerUp = (e: PointerEvent | React.PointerEvent) => {
     if (readOnly) {
       return;
     }
@@ -602,10 +612,42 @@ const BookmarkHTMLHighlighter = forwardRef<
       return;
     }
 
-    const range = selection.getRangeAt(0);
+    // Only process selections within our component. One that runs past the
+    // article is trimmed to the part inside it.
+    const content = contentRef.current;
+    const range = selection.getRangeAt(0).cloneRange();
+    if (!range.intersectsNode(content)) {
+      return;
+    }
+    if (
+      !content.contains(range.startContainer) ||
+      !content.contains(range.endContainer)
+    ) {
+      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+      const first = walker.nextNode() as Text | null;
+      let last = first;
+      while (walker.nextNode()) {
+        last = walker.currentNode as Text;
+      }
+      if (!first || !last) {
+        return;
+      }
+      if (!content.contains(range.startContainer)) {
+        range.setStart(first, 0);
+      }
+      if (!content.contains(range.endContainer)) {
+        range.setEnd(last, last.length);
+      }
+      // Nothing is left when the drag started at the article's very first or
+      // last character and went away from it.
+      if (range.collapsed) {
+        return;
+      }
+    }
 
-    // Only process selections within our component
-    if (!contentRef.current.contains(range.commonAncestorContainer)) {
+    // A menu with nothing to save would close on Save without saving anything.
+    const highlight = buildHighlightFromRange(range, "yellow");
+    if (!highlight) {
       return;
     }
 
@@ -616,8 +658,8 @@ const BookmarkHTMLHighlighter = forwardRef<
       y: isMobile ? rect.bottom : rect.top, // Position below on mobile, above otherwise
     });
 
-    // Store the highlight for later use
-    setPendingHighlight(createHighlightFromRange(range, "yellow"));
+    applyHighlightByOffset(highlight);
+    setPendingHighlight(highlight);
   };
 
   const handleSave = (color: ZHighlightColor, note: string | null) => {
@@ -689,34 +731,35 @@ const BookmarkHTMLHighlighter = forwardRef<
     return text;
   };
 
-  const getTextNodeOffset = (node: Node): number => {
-    let offset = 0;
-    const walker = document.createTreeWalker(
-      contentRef.current!,
-      NodeFilter.SHOW_TEXT,
-      null,
-    );
-
-    while (walker.nextNode()) {
-      if (walker.currentNode === node) {
-        return offset;
-      }
-      offset += walker.currentNode.textContent?.length ?? 0;
+  /**
+   * The position in the article's text of a selection boundary. A boundary can
+   * sit on an element rather than in a text node, as when a drag ends past the
+   * end of a line, between paragraphs or outside the article, so this counts
+   * the text before it instead of looking for its text node.
+   */
+  const getTextOffset = (node: Node, offset: number): number => {
+    const content = contentRef.current;
+    if (!content || !content.contains(node)) {
+      return -1;
     }
-    return -1;
+    const before = document.createRange();
+    before.selectNodeContents(content);
+    before.setEnd(node, offset);
+    return before.toString().length;
   };
 
-  const createHighlightFromRange = (
+  const buildHighlightFromRange = (
     range: Range,
     color: ZHighlightColor,
   ): Highlight | null => {
     if (!contentRef.current) return null;
 
-    const startOffset =
-      getTextNodeOffset(range.startContainer) + range.startOffset;
-    const endOffset = getTextNodeOffset(range.endContainer) + range.endOffset;
+    const startOffset = getTextOffset(range.startContainer, range.startOffset);
+    const endOffset = getTextOffset(range.endContainer, range.endOffset);
 
-    if (startOffset === -1 || endOffset === -1) return null;
+    if (startOffset === -1 || endOffset === -1 || startOffset >= endOffset) {
+      return null;
+    }
 
     const { prefix, suffix } = getHighlightContext(
       getFullText(),
@@ -724,7 +767,7 @@ const BookmarkHTMLHighlighter = forwardRef<
       endOffset,
     );
 
-    const highlight: Highlight = {
+    return {
       id: "NOT_SET",
       startOffset,
       endOffset,
@@ -733,9 +776,6 @@ const BookmarkHTMLHighlighter = forwardRef<
       prefix,
       suffix,
     };
-
-    applyHighlightByOffset(highlight);
-    return highlight;
   };
 
   const getRangeFromHighlight = (highlight: Highlight) => {
@@ -803,7 +843,8 @@ const BookmarkHTMLHighlighter = forwardRef<
         dangerouslySetInnerHTML={
           dockFormAt !== undefined ? stableHtml : { __html: htmlContent }
         }
-        onPointerUp={handlePointerUp}
+        onPointerDown={dockFormAt === undefined ? handlePointerDown : undefined}
+        onPointerUp={dockFormAt !== undefined ? handlePointerUp : undefined}
         className={cn(
           "prose prose-neutral max-w-none break-words dark:prose-invert [&_code]:break-all [&_img]:h-auto [&_img]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:overflow-x-auto",
           className,

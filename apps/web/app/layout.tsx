@@ -24,21 +24,13 @@ export const metadata: Metadata = {
   title: "Karakeep",
   applicationName: "Karakeep",
   description:
-    "The Bookmark Everything app. Hoard links, notes, and images and they will get automatically tagged AI.",
+    "The Bookmark Everything app. Hoard links, notes, and images and they will get automatically tagged with AI.",
   icons: {
+    // No media queries: crawlers (e.g. Google's favicon fetcher) skip icons
+    // that are conditional on one. favicon.svg adapts to dark mode itself.
     icon: [
-      {
-        url: "/icons/logo-icon.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icons/logo-icon-dark.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-        media: "(prefers-color-scheme: dark)",
-      },
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-icon.png",
   },
