@@ -97,7 +97,7 @@ it("archives a bookmark and shows it in Archive", async ({ page }) => {
   await reload(page);
   await bookmark.hover();
   await expect(
-    bookmark.getByRole("button", { name: "Un-archive", exact: true }),
+    bookmark.getByRole("button", { name: "Restore", exact: true }),
   ).toBeVisible();
 });
 
@@ -106,7 +106,7 @@ it("deletes a bookmark after confirmation", async ({ page }) => {
   await bookmark.locator('button[aria-haspopup="menu"]').click();
   await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Delete Bookmark?" })
+    .getByRole("dialog", { name: "Delete bookmark" })
     .getByRole("button", { name: "Delete", exact: true })
     .click();
   await expect(bookmark).toHaveCount(0);
