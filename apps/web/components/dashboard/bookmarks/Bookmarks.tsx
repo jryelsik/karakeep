@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { Separator } from "@/components/ui/separator";
 import { api } from "@/server/api/client";
 import { getServerAuthSession } from "@/server/auth";
 
 import type { ZGetBookmarksRequest } from "@karakeep/shared/types/bookmarks";
 
+import BookmarkHeaderSection from "./BookmarkHeaderSection";
 import UpdatableBookmarksGrid from "./UpdatableBookmarksGrid";
 
 export default async function Bookmarks({
@@ -29,8 +29,7 @@ export default async function Bookmarks({
 
   return (
     <div className="flex flex-col gap-3">
-      {header}
-      {showDivider && <Separator />}
+      <BookmarkHeaderSection header={header} showDivider={showDivider} />
       <UpdatableBookmarksGrid
         query={query}
         bookmarks={bookmarks}

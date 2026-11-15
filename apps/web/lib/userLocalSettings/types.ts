@@ -36,6 +36,7 @@ export const zUserLocalSettings = z.object({
   showTags: z.boolean().optional().default(true),
   showTitle: z.boolean().optional().default(true),
   showNewItemCard: z.boolean().optional().default(true),
+  showListHeader: z.boolean().optional().default(true),
   imageFit: z.enum(["cover", "contain"]).optional().default("cover"),
   sidebarCollapsed: z.boolean().optional().default(false),
 });
