@@ -128,6 +128,21 @@ export const users = sqliteTable("user", {
   inferredTagLang: text("inferredTagLang"),
 });
 
+export const userCustomOrders = sqliteTable("user_custom_orders", {
+  userId: text("userId")
+    .notNull()
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  bookmarkOrders: text("bookmarkOrders", { mode: "json" })
+    .$type<Record<string, string[]>>()
+    .notNull()
+    .default({}),
+  listOrders: text("listOrders", { mode: "json" })
+    .$type<Record<string, string[]>>()
+    .notNull()
+    .default({}),
+});
+
 export const accounts = sqliteTable(
   "account",
   {

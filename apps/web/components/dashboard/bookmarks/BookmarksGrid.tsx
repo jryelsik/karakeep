@@ -224,10 +224,11 @@ export default function BookmarksGrid({
   const viewKey = withinListContext?.id
     ? `list:${withinListContext.id}`
     : pathname || "default";
+  const hasSavedOrder = Boolean(customOrders[viewKey]?.length);
 
   useEffect(() => {
     syncViewDefaultSort(viewKey, isCompactGrid);
-  }, [viewKey, isCompactGrid, syncViewDefaultSort]);
+  }, [viewKey, isCompactGrid, hasSavedOrder, syncViewDefaultSort]);
 
   // ponytail: sorts loaded pages client-side in compact-grid; upgrade to server-side ordering if cross-page manual sorting is needed
   const orderedBookmarks = useMemo(() => {

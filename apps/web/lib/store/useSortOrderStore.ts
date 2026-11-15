@@ -25,6 +25,19 @@ function saveOrders(key: string, orders: Record<string, string[]>) {
   }
 }
 
+function mergeOrders(
+  local: Record<string, string[]>,
+  server: Record<string, string[]>,
+): Record<string, string[]> {
+  const merged: Record<string, string[]> = { ...local };
+  for (const [k, v] of Object.entries(server)) {
+    if (v.length > 0) {
+      merged[k] = v;
+    }
+  }
+  return merged;
+}
+
 export function reorderBookmarkIds(
   currentOrder: string[] | undefined,
   visibleIds: string[],
@@ -50,8 +63,13 @@ interface SortOrderState {
   sortOrder: ClientSortOrder;
   customOrders: Record<string, string[]>;
   customListOrders: Record<string, string[]>;
+  serverSyncSeq: number;
   setSortOrder: (sortOrder: ClientSortOrder) => void;
   syncViewDefaultSort: (viewKey: string, isCompactGrid: boolean) => void;
+  hydrateCustomOrders: (
+    bookmarkOrders: Record<string, string[]>,
+    listOrders: Record<string, string[]>,
+  ) => void;
   reorderCompactGrid: (
     viewKey: string,
     visibleIds: string[],
@@ -70,6 +88,7 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
   sortOrder: "desc", // default sort order
   customOrders: loadOrders(STORAGE_KEY),
   customListOrders: loadOrders(LIST_ORDER_STORAGE_KEY),
+  serverSyncSeq: 0,
   setSortOrder: (sortOrder) => set({ sortOrder }),
   syncViewDefaultSort: (viewKey, isCompactGrid) =>
     set((state) => {
@@ -87,6 +106,20 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
       }
       return { customOrders };
     }),
+  hydrateCustomOrders: (serverBookmarkOrders, serverListOrders) =>
+    set((state) => {
+      const localBookmarks = Object.keys(state.customOrders).length
+        ? state.customOrders
+        : loadOrders(STORAGE_KEY);
+      const localLists = Object.keys(state.customListOrders).length
+        ? state.customListOrders
+        : loadOrders(LIST_ORDER_STORAGE_KEY);
+      const customOrders = mergeOrders(localBookmarks, serverBookmarkOrders);
+      const customListOrders = mergeOrders(localLists, serverListOrders);
+      saveOrders(STORAGE_KEY, customOrders);
+      saveOrders(LIST_ORDER_STORAGE_KEY, customListOrders);
+      return { customOrders, customListOrders };
+    }),
   reorderCompactGrid: (viewKey, visibleIds, fromId, toId) =>
     set((state) => {
       const current = Object.keys(state.customOrders).length
@@ -100,7 +133,11 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
       );
       const customOrders = { ...current, [viewKey]: nextIds };
       saveOrders(STORAGE_KEY, customOrders);
-      return { customOrders, sortOrder: "custom" };
+      return {
+        customOrders,
+        sortOrder: "custom",
+        serverSyncSeq: state.serverSyncSeq + 1,
+      };
     }),
   reorderLists: (groupKey, visibleIds, fromId, toId) =>
     set((state) => {
@@ -115,6 +152,9 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
       );
       const customListOrders = { ...current, [groupKey]: nextIds };
       saveOrders(LIST_ORDER_STORAGE_KEY, customListOrders);
-      return { customListOrders };
+      return {
+        customListOrders,
+        serverSyncSeq: state.serverSyncSeq + 1,
+      };
     }),
 }));

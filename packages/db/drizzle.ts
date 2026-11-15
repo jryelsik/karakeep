@@ -12,10 +12,22 @@ import { instrumentDatabase } from "./instrumentation";
 import * as schema from "./schema";
 import { openSqliteDatabase } from "./sqlite";
 
+const ENSURE_CUSTOM_ORDERS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS user_custom_orders (
+  userId TEXT PRIMARY KEY NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+  bookmarkOrders TEXT NOT NULL DEFAULT '{}',
+  listOrders TEXT NOT NULL DEFAULT '{}'
+);
+`;
+
 const sqlite = openSqliteDatabase(dbConfig.dbCredentials.url, {
   readOnly: serverConfig.degradedMode,
   walMode: serverConfig.database.walMode,
 });
+
+if (!serverConfig.degradedMode) {
+  sqlite.exec(ENSURE_CUSTOM_ORDERS_TABLE_SQL);
+}
 
 instrumentDatabase(sqlite);
 
@@ -27,6 +39,7 @@ export function getInMemoryDB(runMigrations: boolean) {
   const db = drizzle(mem, { schema, logger: false });
   if (runMigrations) {
     migrate(db, { migrationsFolder: path.resolve(__dirname, "./drizzle") });
+    mem.exec(ENSURE_CUSTOM_ORDERS_TABLE_SQL);
   }
   return db;
 }
