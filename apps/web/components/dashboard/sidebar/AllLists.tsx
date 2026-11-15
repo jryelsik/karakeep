@@ -92,6 +92,7 @@ function DroppableListSidebarItem({
   node,
   level,
   open,
+  onOpenChange,
   numBookmarks,
   selectedListId,
   setSelectedListId,
@@ -99,11 +100,13 @@ function DroppableListSidebarItem({
   node: ZBookmarkListTreeNode;
   level: number;
   open: boolean;
+  onOpenChange: (open: boolean, options?: { fromLinkClick?: boolean }) => void;
   numBookmarks?: number;
   selectedListId: string | null;
   setSelectedListId: (id: string | null) => void;
 }) {
   const { t } = useTranslation();
+  const hasChildren = node.children.length > 0;
   const canDrop =
     node.item.type === "manual" &&
     (node.item.userRole === "owner" || node.item.userRole === "editor");
@@ -113,7 +116,7 @@ function DroppableListSidebarItem({
   return (
     <SidebarItem
       collapseButton={
-        node.children.length > 0 ? (
+        hasChildren ? (
           <CollapsibleTriggerChevron
             className="size-4"
             open={open}
@@ -174,6 +177,19 @@ function DroppableListSidebarItem({
       onDragEnter={canDrop ? onDragEnter : undefined}
       onDragLeave={canDrop ? onDragLeave : undefined}
       onDrop={canDrop ? onDrop : undefined}
+      onLinkClick={(e) => {
+        if (!hasChildren) return;
+        if (
+          e.metaKey ||
+          e.ctrlKey ||
+          e.shiftKey ||
+          e.altKey ||
+          e.button !== 0
+        ) {
+          return;
+        }
+        onOpenChange(!open, { fromLinkClick: true });
+      }}
     />
   );
 }
@@ -273,11 +289,12 @@ export default function AllLists({
         listsData={lists}
         filter={(node) => node.item.userRole === "owner"}
         isOpenFunc={isNodeOpen}
-        render={({ node, level, open, numBookmarks }) => (
+        render={({ node, level, open, onOpenChange, numBookmarks }) => (
           <DroppableListSidebarItem
             node={node}
             level={level}
             open={open}
+            onOpenChange={onOpenChange}
             numBookmarks={numBookmarks}
             selectedListId={selectedListId}
             setSelectedListId={setSelectedListId}
@@ -302,6 +319,10 @@ export default function AllLists({
             name={t("lists.shared_lists")}
             path="#"
             linkClassName="py-0.5 px-1"
+            onLinkClick={(e) => {
+              e.preventDefault();
+              setSharedListsOpen((prev) => !prev);
+            }}
           />
           <CollapsibleContent>
             <CollapsibleBookmarkLists
@@ -309,11 +330,12 @@ export default function AllLists({
               filter={(node) => node.item.userRole !== "owner"}
               isOpenFunc={isNodeOpen}
               indentOffset={1}
-              render={({ node, level, open, numBookmarks }) => (
+              render={({ node, level, open, onOpenChange, numBookmarks }) => (
                 <DroppableListSidebarItem
                   node={node}
                   level={level}
                   open={open}
+                  onOpenChange={onOpenChange}
                   numBookmarks={numBookmarks}
                   selectedListId={selectedListId}
                   setSelectedListId={setSelectedListId}

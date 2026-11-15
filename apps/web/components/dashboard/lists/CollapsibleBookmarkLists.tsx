@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { FullPageSpinner } from "@/components/ui/full-page-spinner";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -12,7 +12,7 @@ type RenderFunc = (params: {
   node: ZBookmarkListTreeNode;
   level: number;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (open: boolean, options?: { fromLinkClick?: boolean }) => void;
   numBookmarks?: number;
 }) => React.ReactNode;
 
@@ -46,17 +46,37 @@ function ListItem({
     return node.children.some((l) => isAnyChildOpen(l, isOpenFunc));
   };
   const [open, setOpen] = useState(false);
+  const skipNextAutoOpenRef = useRef(false);
+
   useEffect(() => {
+    if (skipNextAutoOpenRef.current) {
+      skipNextAutoOpenRef.current = false;
+      return;
+    }
     setOpen((curr) => curr || isAnyChildOpen(node, isOpenFunc));
   }, [node, isOpenFunc]);
 
+  const handleOpenChange = (
+    nextOpen: boolean,
+    options?: { fromLinkClick?: boolean },
+  ) => {
+    if (!nextOpen && options?.fromLinkClick && !isOpenFunc(node)) {
+      skipNextAutoOpenRef.current = true;
+    }
+    setOpen(nextOpen);
+  };
+
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={className}>
+    <Collapsible
+      open={open}
+      onOpenChange={handleOpenChange}
+      className={className}
+    >
       {render({
         node,
         level: level + indentOffset,
         open,
-        onOpenChange: setOpen,
+        onOpenChange: handleOpenChange,
         numBookmarks: listStats?.get(node.item.id),
       })}
       <CollapsibleContent>

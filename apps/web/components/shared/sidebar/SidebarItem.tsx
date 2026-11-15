@@ -21,6 +21,7 @@ export default function SidebarItem({
   onDragOver,
   onDragEnter,
   onDragLeave,
+  onLinkClick,
 }: {
   name: string;
   logo: React.ReactNode;
@@ -37,6 +38,7 @@ export default function SidebarItem({
   onDragOver?: React.DragEventHandler;
   onDragEnter?: React.DragEventHandler;
   onDragLeave?: React.DragEventHandler;
+  onLinkClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }) {
   const currentPath = usePathname();
   const collapsed = useSidebarCollapsed();
@@ -62,6 +64,7 @@ export default function SidebarItem({
         <Link
           href={path}
           title={name}
+          onClick={onLinkClick}
           className={cn(
             "flex flex-1 items-center gap-x-2 rounded-[inherit] px-3 py-2",
             linkClassName,
