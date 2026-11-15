@@ -4,12 +4,16 @@ import { useTransition } from "react";
 import Link from "next/link";
 import KarakeepLogo from "@/components/KarakeepIcon";
 import { Button } from "@/components/ui/button";
-import { useSidebarCollapsed } from "@/lib/userLocalSettings/bookmarksLayout";
+import {
+  useIsSidebarCollapsible,
+  useSidebarCollapsed,
+} from "@/lib/userLocalSettings/bookmarksLayout";
 import { updateSidebarCollapsed } from "@/lib/userLocalSettings/userLocalSettings";
 import { cn } from "@/lib/utils";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 export default function HeaderLogoSection() {
+  const isCollapsible = useIsSidebarCollapsible();
   const collapsed = useSidebarCollapsed();
   const [, startTransition] = useTransition();
 
@@ -26,18 +30,24 @@ export default function HeaderLogoSection() {
       >
         <KarakeepLogo height={collapsed ? 26 : 38} iconOnly={collapsed} />
       </Link>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-8 text-muted-foreground hover:text-foreground"
-        onClick={() =>
-          startTransition(() => updateSidebarCollapsed(!collapsed))
-        }
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-      </Button>
+      {isCollapsible && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8 text-muted-foreground hover:text-foreground"
+          onClick={() =>
+            startTransition(() => updateSidebarCollapsed(!collapsed))
+          }
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={18} />
+          ) : (
+            <PanelLeftClose size={18} />
+          )}
+        </Button>
+      )}
     </div>
   );
 }

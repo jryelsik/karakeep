@@ -2,6 +2,7 @@
 
 import type { z } from "zod";
 import { createContext, useContext } from "react";
+import { usePathname } from "next/navigation";
 import { fallbackLng } from "@/lib/i18n/settings";
 
 import type {
@@ -127,9 +128,15 @@ export function useCompactGridIconSize() {
   return settings.compactGridIconSize;
 }
 
+export function useIsSidebarCollapsible() {
+  const pathname = usePathname();
+  return !pathname?.startsWith("/settings") && !pathname?.startsWith("/admin");
+}
+
 export function useSidebarCollapsed() {
   const settings = useUserLocalSettings();
-  return settings.sidebarCollapsed;
+  const collapsible = useIsSidebarCollapsible();
+  return collapsible ? settings.sidebarCollapsed : false;
 }
 
 export function bookmarkLayoutSwitch<T>(
