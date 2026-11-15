@@ -25,7 +25,7 @@ export default function HeaderLogoSection() {
       )}
     >
       <Link
-        href="/dashboard/bookmarks"
+        href="/dashboard/favourites"
         className={cn("flex items-center", collapsed && "w-8 justify-center")}
       >
         <KarakeepLogo height={collapsed ? 26 : 38} iconOnly={collapsed} />

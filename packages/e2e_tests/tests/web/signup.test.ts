@@ -12,7 +12,7 @@ it("signs up and can sign back in with the new account", async ({ page }) => {
   await page.getByLabel("Password", { exact: true }).fill("test1234");
   await page.getByLabel("Confirm password", { exact: true }).fill("test1234");
   await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard\/bookmarks$/);
+  await expect(page).toHaveURL(/\/dashboard\/favourites$/);
   await expect(bookmarkEditor(page)).toBeVisible();
 
   // Remove the automatic signup session to verify the saved credentials.

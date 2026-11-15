@@ -55,7 +55,7 @@ export function SectionMobileBar({
         </Link>
       )}
       <Link
-        href="/dashboard/bookmarks"
+        href="/dashboard/favourites"
         onClick={haptic}
         className={`${barLinkClass} text-muted-foreground hover:bg-accent/50 hover:text-foreground`}
       >
