@@ -82,7 +82,7 @@ export const UserLocalSettingsCtx = createContext<
   showNotes: false,
   showTags: true,
   showTitle: true,
-  showEditorCard: true,
+  showNewItemCard: true,
   imageFit: "cover",
   sidebarCollapsed: false,
 });
@@ -97,7 +97,7 @@ export function useBookmarkDisplaySettings() {
     showNotes: settings.showNotes,
     showTags: settings.showTags,
     showTitle: settings.showTitle,
-    showEditorCard: settings.showEditorCard,
+    showNewItemCard: settings.showNewItemCard,
     imageFit: settings.imageFit,
   };
 }

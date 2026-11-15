@@ -69,8 +69,8 @@ export async function updateShowTitle(showTitle: boolean) {
   await readModifyWrite(() => ({ showTitle }));
 }
 
-export async function updateShowEditorCard(showEditorCard: boolean) {
-  await readModifyWrite(() => ({ showEditorCard }));
+export async function updateShowNewItemCard(showNewItemCard: boolean) {
+  await readModifyWrite(() => ({ showNewItemCard }));
 }
 
 export async function updateImageFit(imageFit: "cover" | "contain") {

@@ -25,6 +25,7 @@ dist
 # misc
 .DS_Store
 *.pem
+cookies.json
 
 # debug
 npm-debug.log*
