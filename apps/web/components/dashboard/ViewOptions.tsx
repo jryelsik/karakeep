@@ -43,7 +43,7 @@ import {
   updateCompactGridIconSize,
   updateGridColumns,
   updateImageFit,
-  updateShowEditorCard,
+  updateShowNewItemCard,
   updateShowNotes,
   updateShowTags,
   updateShowTitle,
@@ -59,8 +59,8 @@ import {
   List,
   LucideIcon,
   NotepadText,
-  PlusSquare,
   Settings,
+  SquarePlus,
   Tag,
 } from "lucide-react";
 
@@ -165,13 +165,13 @@ export default function ViewOptions() {
     });
   };
 
-  const handleShowEditorCardChange = (checked: boolean) => {
+  const handleShowNewItemCardChange = (checked: boolean) => {
     startTransition(async () => {
       setOptimisticDisplaySettings({
         ...optimisticDisplaySettings,
-        showEditorCard: checked,
+        showNewItemCard: checked,
       });
-      await updateShowEditorCard(checked);
+      await updateShowNewItemCard(checked);
     });
   };
 
@@ -325,18 +325,18 @@ export default function ViewOptions() {
             onCheckedChange={handleShowTitleChange}
           />
         </div>
-        <div className="flex items-center justify-between px-2 py-1.5">
+        <div className="flex items-center justify-between px-2 py-1.5 max-sm:min-h-11">
           <Label
-            htmlFor="show-editor-card"
+            htmlFor="show-new-item-card"
             className="flex flex-1 cursor-pointer items-center gap-2 font-normal leading-normal"
           >
-            <PlusSquare className="size-4 text-muted-foreground" />
-            <span>{t("view_options.show_editor_card")}</span>
+            <SquarePlus className="size-4 text-muted-foreground" />
+            <span>{t("view_options.show_new_item_card")}</span>
           </Label>
           <Switch
-            id="show-editor-card"
-            checked={optimisticDisplaySettings.showEditorCard}
-            onCheckedChange={handleShowEditorCardChange}
+            id="show-new-item-card"
+            checked={optimisticDisplaySettings.showNewItemCard}
+            onCheckedChange={handleShowNewItemCardChange}
           />
         </div>
 

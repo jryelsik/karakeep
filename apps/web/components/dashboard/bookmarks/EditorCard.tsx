@@ -1,6 +1,12 @@
 import type { SubmitErrorHandler, SubmitHandler } from "react-hook-form";
-import React, { useImperativeHandle, useRef } from "react";
+import React, { useRef } from "react";
 import { ActionButton } from "@/components/ui/action-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Form, FormControl, FormItem } from "@/components/ui/form";
 import { Kbd } from "@/components/ui/kbd";
 import MultipleChoiceDialog from "@/components/ui/multiple-choice-dialog";
@@ -11,11 +17,9 @@ import BookmarkSavedToast from "@/components/utils/BookmarkSavedToast";
 import { useClientConfig } from "@/lib/clientConfig";
 import { useTranslation } from "@/lib/i18n/client";
 import {
-  useBookmarkDisplaySettings,
   useBookmarkLayout,
   useBookmarkLayoutSwitch,
 } from "@/lib/userLocalSettings/bookmarksLayout";
-import { updateShowEditorCard } from "@/lib/userLocalSettings/userLocalSettings";
 import { cn, getOS } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -32,20 +36,27 @@ interface MultiUrlImportState {
   text: string;
 }
 
-export default function EditorCard({ className }: { className?: string }) {
+export default function EditorCard({
+  className,
+  dialog,
+}: {
+  className?: string;
+  dialog?: { open: boolean; onOpenChange: (open: boolean) => void };
+}) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inDialog = dialog !== undefined;
 
   const [multiUrlImportState, setMultiUrlImportState] =
     React.useState<MultiUrlImportState | null>(null);
 
   const demoMode = !!useClientConfig().demoMode;
   const bookmarkLayout = useBookmarkLayout();
-  const { showEditorCard } = useBookmarkDisplaySettings();
   const isInline =
-    bookmarkLayout === "list" ||
-    bookmarkLayout === "compact" ||
-    bookmarkLayout === "compact-grid";
+    !inDialog &&
+    (bookmarkLayout === "list" ||
+      bookmarkLayout === "compact" ||
+      bookmarkLayout === "compact-grid");
 
   const formSchema = z.object({
     text: z.string(),
@@ -56,25 +67,18 @@ export default function EditorCard({ className }: { className?: string }) {
       text: "",
     },
   });
-  const { ref, ...textFieldProps } = form.register("text");
-  useImperativeHandle(ref, () => inputRef.current);
+  const { ref: registerText, ...textFieldProps } = form.register("text");
   useHotkeys(
     "mod+e",
     () => {
-      const next = !showEditorCard;
-      void updateShowEditorCard(next);
+      if (dialog) {
+        dialog.onOpenChange(true);
+      } else {
+        inputRef.current?.focus();
+      }
     },
-    { enableOnFormTags: true, preventDefault: true },
-    [showEditorCard],
+    { preventDefault: true },
   );
-
-  const prevShowRef = useRef(showEditorCard);
-  React.useEffect(() => {
-    if (showEditorCard && !prevShowRef.current) {
-      inputRef.current?.focus();
-    }
-    prevShowRef.current = showEditorCard;
-  }, [showEditorCard]);
 
   const { mutate, isPending } = useCreateBookmarkWithPostHook({
     onSuccess: (resp) => {
@@ -85,6 +89,7 @@ export default function EditorCard({ className }: { className?: string }) {
         });
       }
       form.reset();
+      dialog?.onOpenChange(false);
       if (isInline && inputRef?.current?.style) {
         inputRef.current.style.height = "auto";
       }
@@ -206,24 +211,22 @@ export default function EditorCard({ className }: { className?: string }) {
 
   const OS = getOS();
 
-  if (!showEditorCard) {
-    return null;
-  }
-
-  return (
+  const editor = (
     <Form {...form}>
       <form
         className={cn(
           className,
-          "relative flex rounded-xl bg-card",
-          isInline
-            ? "flex-row items-center gap-3 px-3 py-2"
-            : "flex-col gap-2 p-4",
-          cardHeight,
+          "relative flex",
+          inDialog
+            ? "min-h-36 flex-col gap-2"
+            : isInline
+              ? "flex-row items-center gap-3 rounded-xl bg-card px-3 py-2"
+              : "flex-col gap-2 rounded-xl bg-card p-4",
+          !inDialog && cardHeight,
         )}
         onSubmit={form.handleSubmit(onSubmit, onError)}
       >
-        {!isInline && (
+        {!inDialog && !isInline && (
           <>
             <div className="flex justify-between">
               <p className="text-sm">{t("editor.new_item")}</p>
@@ -235,7 +238,10 @@ export default function EditorCard({ className }: { className?: string }) {
         <FormItem className="flex-1">
           <FormControl>
             <Textarea
-              ref={inputRef}
+              ref={(element) => {
+                inputRef.current = element;
+                registerText(element);
+              }}
               rows={isInline ? 1 : undefined}
               disabled={isPending}
               className={cn(
@@ -331,5 +337,20 @@ export default function EditorCard({ className }: { className?: string }) {
         )}
       </form>
     </Form>
+  );
+
+  if (!dialog) {
+    return editor;
+  }
+
+  return (
+    <Dialog open={dialog.open} onOpenChange={dialog.onOpenChange}>
+      <DialogContent aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle>{t("editor.new_item")}</DialogTitle>
+        </DialogHeader>
+        {editor}
+      </DialogContent>
+    </Dialog>
   );
 }

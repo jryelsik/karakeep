@@ -47,7 +47,7 @@ export default {
           NSAllowsArbitraryLoads: true,
         },
       },
-      buildNumber: "55",
+      buildNumber: "58",
     },
     android: {
       adaptiveIcon: {
@@ -68,7 +68,7 @@ export default {
       package: IS_DEV
         ? "app.hoarder.hoardermobile.dev"
         : "app.hoarder.hoardermobile",
-      versionCode: 55,
+      versionCode: 58,
     },
     plugins: [
       "./plugins/trust-local-certs.js",
@@ -106,14 +106,11 @@ export default {
             targetSdkVersion: 36,
             ndkVersion: "27.1.12297006",
           },
-          ios: {
-            // Apps built with the iOS 27 SDK (Xcode 27) must use the UIScene
-            // lifecycle. Can be removed on SDK 58+, where it's the default.
-            enableSceneSupport: true,
-          },
         },
       ],
+      "expo-image",
       "expo-sharing",
+      "expo-status-bar",
       "expo-web-browser",
       [
         "@sentry/react-native/expo",

@@ -335,10 +335,9 @@ export default function BookmarksGrid({
 
   const children = [
     showEditorCard && !isCompactGrid && (
-      <EditorCard
-        key={"editor"}
-        className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
-      />
+      <StyledBookmarkCard key={"editor"}>
+        <EditorCard />
+      </StyledBookmarkCard>
     ),
     ...orderedBookmarks.map((bookmark, index) => (
       <BookmarkGridItem
@@ -355,7 +354,7 @@ export default function BookmarksGrid({
         masonry: (
           <Masonry
             className="-ml-4 flex w-auto"
-            columnClassName="pl-4"
+            columnClassName="pl-4 [container-type:inline-size]"
             breakpointCols={breakpointConfig}
           >
             {children}
@@ -364,7 +363,7 @@ export default function BookmarksGrid({
         grid: (
           <Masonry
             className="-ml-4 flex w-auto"
-            columnClassName="pl-4"
+            columnClassName="pl-4 [container-type:inline-size]"
             breakpointCols={breakpointConfig}
           >
             {children}
@@ -375,10 +374,9 @@ export default function BookmarksGrid({
         "compact-grid": (
           <div className="flex flex-col">
             {showEditorCard && (
-              <EditorCard
-                key={"editor"}
-                className="mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow"
-              />
+              <StyledBookmarkCard key={"editor"}>
+                <EditorCard />
+              </StyledBookmarkCard>
             )}
             <div ref={compactGridRef} className="w-full py-4">
               <div
