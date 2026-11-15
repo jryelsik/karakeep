@@ -70,12 +70,13 @@ export const COMPACT_GRID_SIZE_METRICS: Record<
   },
 };
 
-const defaultLayout: BookmarksLayoutTypes = "masonry";
+const defaultLayout: BookmarksLayoutTypes = "list";
 
 export const UserLocalSettingsCtx = createContext<
   z.infer<typeof zUserLocalSettings>
 >({
   bookmarkGridLayout: defaultLayout,
+  viewLayouts: {},
   lang: fallbackLng,
   gridColumns: 3,
   compactGridColumns: 6,
@@ -103,9 +104,19 @@ export function useBookmarkDisplaySettings() {
   };
 }
 
+export function getDefaultLayoutForPath(
+  pathname: string | null | undefined,
+): BookmarksLayoutTypes {
+  return pathname === "/dashboard/favourites" ? "compact-grid" : "list";
+}
+
 export function useBookmarkLayout() {
   const settings = useUserLocalSettings();
-  return settings.bookmarkGridLayout;
+  const pathname = usePathname();
+  if (pathname && settings.viewLayouts?.[pathname]) {
+    return settings.viewLayouts[pathname];
+  }
+  return getDefaultLayoutForPath(pathname);
 }
 
 export function useInterfaceLang() {

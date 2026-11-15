@@ -26,7 +26,8 @@ export const zCompactGridIconSize = z.enum(COMPACT_GRID_ICON_SIZES);
 export type CompactGridIconSize = z.infer<typeof zCompactGridIconSize>;
 
 export const zUserLocalSettings = z.object({
-  bookmarkGridLayout: zBookmarkGridLayout.optional().default("masonry"),
+  bookmarkGridLayout: zBookmarkGridLayout.optional().default("list"),
+  viewLayouts: z.record(z.string(), zBookmarkGridLayout).optional().default({}),
   lang: z.string().optional().default("en"),
   gridColumns: z.number().min(1).max(6).optional().default(3),
   compactGridColumns: z.number().min(0).max(12).optional().default(6),
