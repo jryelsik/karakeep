@@ -15,6 +15,7 @@ import {
   highlights,
   subscriptions,
   tagsOnBookmarks,
+  userCustomOrders,
   users,
 } from "@karakeep/db/schema";
 import { deleteAsset, deleteUserAssets } from "@karakeep/shared-server";
@@ -215,25 +216,34 @@ export class User {
   }
 
   async getSettings(): Promise<z.infer<typeof zUserSettingsSchema>> {
-    const settings = await this.ctx.db.query.users.findFirst({
-      where: eq(users.id, this.user.id),
-      columns: {
-        bookmarkClickAction: true,
-        archiveDisplayBehaviour: true,
-        timezone: true,
-        backupsEnabled: true,
-        backupsFrequency: true,
-        backupsRetentionDays: true,
-        readerFontSize: true,
-        readerLineHeight: true,
-        readerFontFamily: true,
-        autoTaggingEnabled: true,
-        autoSummarizationEnabled: true,
-        tagStyle: true,
-        curatedTagIds: true,
-        inferredTagLang: true,
-      },
-    });
+    const [settings, customOrders] = await Promise.all([
+      this.ctx.db.query.users.findFirst({
+        where: eq(users.id, this.user.id),
+        columns: {
+          bookmarkClickAction: true,
+          archiveDisplayBehaviour: true,
+          timezone: true,
+          backupsEnabled: true,
+          backupsFrequency: true,
+          backupsRetentionDays: true,
+          readerFontSize: true,
+          readerLineHeight: true,
+          readerFontFamily: true,
+          autoTaggingEnabled: true,
+          autoSummarizationEnabled: true,
+          tagStyle: true,
+          curatedTagIds: true,
+          inferredTagLang: true,
+        },
+      }),
+      this.ctx.db.query.userCustomOrders.findFirst({
+        where: eq(userCustomOrders.userId, this.user.id),
+        columns: {
+          bookmarkOrders: true,
+          listOrders: true,
+        },
+      }),
+    ]);
 
     if (!settings) {
       throw new TRPCError({
@@ -257,6 +267,8 @@ export class User {
       tagStyle: settings.tagStyle ?? "as-generated",
       curatedTagIds: settings.curatedTagIds ?? null,
       inferredTagLang: settings.inferredTagLang,
+      customBookmarkOrders: customOrders?.bookmarkOrders ?? {},
+      customListOrders: customOrders?.listOrders ?? {},
     };
   }
 
@@ -270,25 +282,55 @@ export class User {
       });
     }
 
-    await this.ctx.db
-      .update(users)
-      .set({
-        bookmarkClickAction: input.bookmarkClickAction,
-        archiveDisplayBehaviour: input.archiveDisplayBehaviour,
-        timezone: input.timezone,
-        backupsEnabled: input.backupsEnabled,
-        backupsFrequency: input.backupsFrequency,
-        backupsRetentionDays: input.backupsRetentionDays,
-        readerFontSize: input.readerFontSize,
-        readerLineHeight: input.readerLineHeight,
-        readerFontFamily: input.readerFontFamily,
-        autoTaggingEnabled: input.autoTaggingEnabled,
-        autoSummarizationEnabled: input.autoSummarizationEnabled,
-        tagStyle: input.tagStyle,
-        curatedTagIds: input.curatedTagIds,
-        inferredTagLang: input.inferredTagLang,
-      })
-      .where(eq(users.id, this.user.id));
+    const { customBookmarkOrders, customListOrders, ...userColumnUpdates } =
+      input;
+
+    if (Object.values(userColumnUpdates).some((v) => v !== undefined)) {
+      await this.ctx.db
+        .update(users)
+        .set({
+          bookmarkClickAction: userColumnUpdates.bookmarkClickAction,
+          archiveDisplayBehaviour: userColumnUpdates.archiveDisplayBehaviour,
+          timezone: userColumnUpdates.timezone,
+          backupsEnabled: userColumnUpdates.backupsEnabled,
+          backupsFrequency: userColumnUpdates.backupsFrequency,
+          backupsRetentionDays: userColumnUpdates.backupsRetentionDays,
+          readerFontSize: userColumnUpdates.readerFontSize,
+          readerLineHeight: userColumnUpdates.readerLineHeight,
+          readerFontFamily: userColumnUpdates.readerFontFamily,
+          autoTaggingEnabled: userColumnUpdates.autoTaggingEnabled,
+          autoSummarizationEnabled: userColumnUpdates.autoSummarizationEnabled,
+          tagStyle: userColumnUpdates.tagStyle,
+          curatedTagIds: userColumnUpdates.curatedTagIds,
+          inferredTagLang: userColumnUpdates.inferredTagLang,
+        })
+        .where(eq(users.id, this.user.id));
+    }
+
+    if (customBookmarkOrders !== undefined || customListOrders !== undefined) {
+      const existing = await this.ctx.db.query.userCustomOrders.findFirst({
+        where: eq(userCustomOrders.userId, this.user.id),
+      });
+      await this.ctx.db
+        .insert(userCustomOrders)
+        .values({
+          userId: this.user.id,
+          bookmarkOrders:
+            customBookmarkOrders ?? existing?.bookmarkOrders ?? {},
+          listOrders: customListOrders ?? existing?.listOrders ?? {},
+        })
+        .onConflictDoUpdate({
+          target: userCustomOrders.userId,
+          set: {
+            ...(customBookmarkOrders !== undefined
+              ? { bookmarkOrders: customBookmarkOrders }
+              : {}),
+            ...(customListOrders !== undefined
+              ? { listOrders: customListOrders }
+              : {}),
+          },
+        });
+    }
   }
 
   async updateProfile(

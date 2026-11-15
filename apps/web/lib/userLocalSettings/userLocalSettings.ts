@@ -35,8 +35,21 @@ async function readModifyWrite(
   });
 }
 
-export async function updateBookmarksLayout(layout: BookmarksLayoutTypes) {
-  await readModifyWrite(() => ({ bookmarkGridLayout: layout }));
+export async function updateBookmarksLayout(
+  layout: BookmarksLayoutTypes,
+  viewPath?: string,
+) {
+  await readModifyWrite((settings) => ({
+    bookmarkGridLayout: layout,
+    ...(viewPath
+      ? {
+          viewLayouts: {
+            ...settings.viewLayouts,
+            [viewPath]: layout,
+          },
+        }
+      : {}),
+  }));
 }
 
 export async function updateInterfaceLang(lang: string) {
@@ -71,6 +84,10 @@ export async function updateShowTitle(showTitle: boolean) {
 
 export async function updateShowNewItemCard(showNewItemCard: boolean) {
   await readModifyWrite(() => ({ showNewItemCard }));
+}
+
+export async function updateShowListHeader(showListHeader: boolean) {
+  await readModifyWrite(() => ({ showListHeader }));
 }
 
 export async function updateImageFit(imageFit: "cover" | "contain") {

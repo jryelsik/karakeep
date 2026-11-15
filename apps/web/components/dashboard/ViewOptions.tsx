@@ -7,6 +7,7 @@ import {
   useState,
   useTransition,
 } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ import {
   updateCompactGridIconSize,
   updateGridColumns,
   updateImageFit,
+  updateShowListHeader,
   updateShowNewItemCard,
   updateShowNotes,
   updateShowTags,
@@ -59,6 +61,7 @@ import {
   List,
   LucideIcon,
   NotepadText,
+  PanelTop,
   Settings,
   SquarePlus,
   Tag,
@@ -76,6 +79,7 @@ const iconMap: Record<LayoutType, LucideIcon> = {
 
 export default function ViewOptions() {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const layout = useBookmarkLayout();
   const gridColumns = useGridColumns();
   const compactGridColumns = useCompactGridColumns();
@@ -131,7 +135,7 @@ export default function ViewOptions() {
   const handleLayoutChange = (newLayout: LayoutType) => {
     startTransition(async () => {
       setOptimisticLayout(newLayout);
-      await updateBookmarksLayout(newLayout);
+      await updateBookmarksLayout(newLayout, pathname);
     });
   };
 
@@ -172,6 +176,16 @@ export default function ViewOptions() {
         showNewItemCard: checked,
       });
       await updateShowNewItemCard(checked);
+    });
+  };
+
+  const handleShowListHeaderChange = (checked: boolean) => {
+    startTransition(async () => {
+      setOptimisticDisplaySettings({
+        ...optimisticDisplaySettings,
+        showListHeader: checked,
+      });
+      await updateShowListHeader(checked);
     });
   };
 
@@ -337,6 +351,20 @@ export default function ViewOptions() {
             id="show-new-item-card"
             checked={optimisticDisplaySettings.showNewItemCard}
             onCheckedChange={handleShowNewItemCardChange}
+          />
+        </div>
+        <div className="flex items-center justify-between px-2 py-1.5 max-sm:min-h-11">
+          <Label
+            htmlFor="show-list-header"
+            className="flex flex-1 cursor-pointer items-center gap-2 font-normal leading-normal"
+          >
+            <PanelTop className="size-4 text-muted-foreground" />
+            <span>{t("view_options.show_list_header")}</span>
+          </Label>
+          <Switch
+            id="show-list-header"
+            checked={optimisticDisplaySettings.showListHeader}
+            onCheckedChange={handleShowListHeaderChange}
           />
         </div>
 

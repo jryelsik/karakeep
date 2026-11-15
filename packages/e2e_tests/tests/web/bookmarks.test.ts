@@ -80,9 +80,11 @@ it("favorites a bookmark and shows it in Favorites", async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard\/favourites$/);
   await expect(bookmark).toHaveText(/A bookmark for the weekend/);
   await reload(page);
+  await expect(bookmark).toHaveText(/A bookmark for the weekend/);
   await bookmark.hover();
+  await bookmark.locator('button[aria-haspopup="menu"]').click();
   await expect(
-    bookmark.getByRole("button", { name: "Unfavorite", exact: true }),
+    page.getByRole("menuitem", { name: "Unfavorite", exact: true }),
   ).toBeVisible();
 });
 

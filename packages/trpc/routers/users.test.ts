@@ -272,6 +272,8 @@ describe("User Routes", () => {
       curatedTagIds: null,
       inferredTagLang: null,
       tagStyle: "titlecase-spaces",
+      customBookmarkOrders: {},
+      customListOrders: {},
     });
 
     // Update settings
@@ -314,6 +316,21 @@ describe("User Routes", () => {
       curatedTagIds: null,
       inferredTagLang: "en",
       tagStyle: "lowercase-underscores",
+      customBookmarkOrders: {},
+      customListOrders: {},
+    });
+
+    // Update custom bookmark and list orders
+    await caller.users.updateSettings({
+      customBookmarkOrders: { "/dashboard/favourites": ["b2", "b1"] },
+      customListOrders: { "root:owner": ["l2", "l1"] },
+    });
+    const customOrderSettings = await caller.users.settings();
+    expect(customOrderSettings.customBookmarkOrders).toEqual({
+      "/dashboard/favourites": ["b2", "b1"],
+    });
+    expect(customOrderSettings.customListOrders).toEqual({
+      "root:owner": ["l2", "l1"],
     });
 
     // Update bookmarkClickAction to open_original_link_same_tab

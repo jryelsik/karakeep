@@ -47,4 +47,42 @@ describe("useSortOrderStore", () => {
     useSortOrderStore.getState().syncViewDefaultSort("list:1", false);
     expect(useSortOrderStore.getState().sortOrder).toBe("desc");
   });
+
+  it("reorders lists within a group and bumps serverSyncSeq", () => {
+    useSortOrderStore.setState({
+      customListOrders: {},
+      serverSyncSeq: 0,
+    });
+    useSortOrderStore
+      .getState()
+      .reorderLists("root:owner", ["l1", "l2", "l3"], "l3", "l1");
+
+    expect(useSortOrderStore.getState().customListOrders["root:owner"]).toEqual(
+      ["l3", "l1", "l2"],
+    );
+    expect(useSortOrderStore.getState().serverSyncSeq).toBe(1);
+  });
+
+  it("hydrates server orders while preserving local-only keys", () => {
+    useSortOrderStore.setState({
+      customOrders: { "/dashboard/bookmarks": ["b9", "b8"] },
+      customListOrders: { "parent:p1": ["c2", "c1"] },
+    });
+
+    useSortOrderStore
+      .getState()
+      .hydrateCustomOrders(
+        { "/dashboard/favourites": ["b2", "b1"] },
+        { "root:owner": ["l2", "l1"] },
+      );
+
+    expect(useSortOrderStore.getState().customOrders).toEqual({
+      "/dashboard/bookmarks": ["b9", "b8"],
+      "/dashboard/favourites": ["b2", "b1"],
+    });
+    expect(useSortOrderStore.getState().customListOrders).toEqual({
+      "parent:p1": ["c2", "c1"],
+      "root:owner": ["l2", "l1"],
+    });
+  });
 });

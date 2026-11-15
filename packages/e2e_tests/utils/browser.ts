@@ -84,7 +84,8 @@ export async function signIn(page: Page, email: string, password = "test1234") {
   // Signing in verifies the password and then redirects through / to the
   // dashboard. While other test files are hashing passwords for their users,
   // this can take well over the default 5s expect timeout.
-  await expect(page).toHaveURL(/\/dashboard\/bookmarks$/, { timeout: 30000 });
+  await expect(page).toHaveURL(/\/dashboard\/favourites$/, { timeout: 30000 });
+  await goto(page, "/dashboard/bookmarks");
 }
 
 // The bookmark cards on screen. Hidden card elements can still be in the DOM,

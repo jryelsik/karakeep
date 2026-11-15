@@ -23,7 +23,7 @@ export default async function SectionSidebar({
         <SidebarItem
           logo={<ArrowLeft className="size-4" />}
           name={t("settings.back_to_app")}
-          path="/dashboard/bookmarks"
+          path="/dashboard/favourites"
         />
       </ul>
       {groups.map((group, index) => (

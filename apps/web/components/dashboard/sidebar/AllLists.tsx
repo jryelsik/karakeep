@@ -10,8 +10,13 @@ import {
   CollapsibleTriggerChevron,
 } from "@/components/ui/collapsible";
 import { toast } from "@/components/ui/sonner";
-import { BOOKMARK_DRAG_MIME } from "@/lib/bookmark-drag";
+import {
+  BOOKMARK_DRAG_MIME,
+  LIST_DRAG_MIME,
+  LIST_GROUP_MIME,
+} from "@/lib/bookmark-drag";
 import { useTranslation } from "@/lib/i18n/client";
+import { useSortOrderStore } from "@/lib/store/useSortOrderStore";
 import { useSidebarCollapsed } from "@/lib/userLocalSettings/bookmarksLayout";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal, Plus } from "lucide-react";
@@ -92,16 +97,37 @@ function DroppableListSidebarItem({
   node,
   level,
   open,
+  onOpenChange,
   numBookmarks,
   selectedListId,
   setSelectedListId,
+  groupKey,
+  siblingIds,
+  draggedList,
+  setDraggedList,
+  dragOverListId,
+  setDragOverListId,
+  onReorderLists,
 }: {
   node: ZBookmarkListTreeNode;
   level: number;
   open: boolean;
+  onOpenChange: (open: boolean, options?: { fromLinkClick?: boolean }) => void;
   numBookmarks?: number;
   selectedListId: string | null;
   setSelectedListId: (id: string | null) => void;
+  groupKey: string;
+  siblingIds: string[];
+  draggedList: { id: string; groupKey: string } | null;
+  setDraggedList: (dragged: { id: string; groupKey: string } | null) => void;
+  dragOverListId: string | null;
+  setDragOverListId: (id: string | null) => void;
+  onReorderLists: (
+    groupKey: string,
+    visibleIds: string[],
+    fromId: string,
+    toId: string,
+  ) => void;
 }) {
   const { t } = useTranslation();
   const canDrop =
@@ -109,6 +135,11 @@ function DroppableListSidebarItem({
     (node.item.userRole === "owner" || node.item.userRole === "editor");
   const { dropHighlight, onDragOver, onDragEnter, onDragLeave, onDrop } =
     useDropTarget(node.item.id, node.item.name);
+
+  const isSameListGroup =
+    draggedList !== null &&
+    draggedList.groupKey === groupKey &&
+    draggedList.id !== node.item.id;
 
   return (
     <SidebarItem
@@ -130,7 +161,28 @@ function DroppableListSidebarItem({
       }
       name={node.item.name}
       path={`/dashboard/lists/${node.item.id}`}
-      className="group"
+      className={cn("group", draggedList?.id === node.item.id && "opacity-40")}
+      draggable
+      onLinkClick={
+        node.children.length > 0
+          ? (e) => {
+              if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+                onOpenChange(!open, { fromLinkClick: true });
+              }
+            }
+          : undefined
+      }
+      onDragStart={(e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData(LIST_DRAG_MIME, node.item.id);
+        e.dataTransfer.setData(LIST_GROUP_MIME, groupKey);
+        e.dataTransfer.effectAllowed = "move";
+        setDraggedList({ id: node.item.id, groupKey });
+      }}
+      onDragEnd={() => {
+        setDraggedList(null);
+        setDragOverListId(null);
+      }}
       right={
         <ListOptions
           onOpenChange={(isOpen) => {
@@ -169,11 +221,63 @@ function DroppableListSidebarItem({
       }
       linkClassName="py-0.5 px-1"
       style={{ marginLeft: `${level * 1}rem` }}
-      dropHighlight={canDrop && dropHighlight}
-      onDragOver={canDrop ? onDragOver : undefined}
-      onDragEnter={canDrop ? onDragEnter : undefined}
-      onDragLeave={canDrop ? onDragLeave : undefined}
-      onDrop={canDrop ? onDrop : undefined}
+      dropHighlight={
+        (canDrop && dropHighlight) || dragOverListId === node.item.id
+      }
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes(LIST_DRAG_MIME)) {
+          if (isSameListGroup) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = "move";
+            if (dragOverListId !== node.item.id) {
+              setDragOverListId(node.item.id);
+            }
+          }
+          return;
+        }
+        if (canDrop) onDragOver(e);
+      }}
+      onDragEnter={(e) => {
+        if (e.dataTransfer.types.includes(LIST_DRAG_MIME)) {
+          if (isSameListGroup) {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragOverListId(node.item.id);
+          }
+          return;
+        }
+        if (canDrop) onDragEnter(e);
+      }}
+      onDragLeave={(e) => {
+        if (dragOverListId === node.item.id) {
+          if (
+            !e.relatedTarget ||
+            !e.currentTarget.contains(e.relatedTarget as Node)
+          ) {
+            setDragOverListId(null);
+          }
+        }
+        if (canDrop) onDragLeave();
+      }}
+      onDrop={(e) => {
+        if (e.dataTransfer.types.includes(LIST_DRAG_MIME)) {
+          const fromId =
+            draggedList?.id || e.dataTransfer.getData(LIST_DRAG_MIME);
+          const fromGroup =
+            draggedList?.groupKey || e.dataTransfer.getData(LIST_GROUP_MIME);
+          setDraggedList(null);
+          setDragOverListId(null);
+          if (!fromId || fromGroup !== groupKey || fromId === node.item.id) {
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          onReorderLists(groupKey, siblingIds, fromId, node.item.id);
+          return;
+        }
+        if (canDrop) void onDrop(e);
+      }}
     />
   );
 }
@@ -192,6 +296,12 @@ export default function AllLists({
   );
 
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [draggedList, setDraggedList] = useState<{
+    id: string;
+    groupKey: string;
+  } | null>(null);
+  const [dragOverListId, setDragOverListId] = useState<string | null>(null);
+  const reorderLists = useSortOrderStore((state) => state.reorderLists);
 
   // Fetch live lists data
   const { data: listsData } = useBookmarkLists(undefined, {
@@ -271,16 +381,33 @@ export default function AllLists({
       {/* Owned Lists */}
       <CollapsibleBookmarkLists
         listsData={lists}
+        groupPrefix="root:owner"
         filter={(node) => node.item.userRole === "owner"}
         isOpenFunc={isNodeOpen}
-        render={({ node, level, open, numBookmarks }) => (
+        render={({
+          node,
+          level,
+          open,
+          onOpenChange,
+          numBookmarks,
+          groupKey,
+          siblingIds,
+        }) => (
           <DroppableListSidebarItem
             node={node}
             level={level}
             open={open}
+            onOpenChange={onOpenChange}
             numBookmarks={numBookmarks}
             selectedListId={selectedListId}
             setSelectedListId={setSelectedListId}
+            groupKey={groupKey}
+            siblingIds={siblingIds}
+            draggedList={draggedList}
+            setDraggedList={setDraggedList}
+            dragOverListId={dragOverListId}
+            setDragOverListId={setDragOverListId}
+            onReorderLists={reorderLists}
           />
         )}
       />
@@ -302,21 +429,42 @@ export default function AllLists({
             name={t("lists.shared_lists")}
             path="#"
             linkClassName="py-0.5 px-1"
+            onLinkClick={(e) => {
+              e.preventDefault();
+              setSharedListsOpen((prev) => !prev);
+            }}
           />
           <CollapsibleContent>
             <CollapsibleBookmarkLists
               listsData={lists}
+              groupPrefix="root:shared"
               filter={(node) => node.item.userRole !== "owner"}
               isOpenFunc={isNodeOpen}
               indentOffset={1}
-              render={({ node, level, open, numBookmarks }) => (
+              render={({
+                node,
+                level,
+                open,
+                onOpenChange,
+                numBookmarks,
+                groupKey,
+                siblingIds,
+              }) => (
                 <DroppableListSidebarItem
                   node={node}
                   level={level}
                   open={open}
+                  onOpenChange={onOpenChange}
                   numBookmarks={numBookmarks}
                   selectedListId={selectedListId}
                   setSelectedListId={setSelectedListId}
+                  groupKey={groupKey}
+                  siblingIds={siblingIds}
+                  draggedList={draggedList}
+                  setDraggedList={setDraggedList}
+                  dragOverListId={dragOverListId}
+                  setDragOverListId={setDragOverListId}
+                  onReorderLists={reorderLists}
                 />
               )}
             />

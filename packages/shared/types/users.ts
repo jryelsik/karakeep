@@ -227,6 +227,8 @@ export const zUserSettingsSchema = z.object({
   tagStyle: zTagStyleSchema,
   curatedTagIds: z.array(z.string()).nullable(),
   inferredTagLang: z.string().nullable(),
+  customBookmarkOrders: z.record(z.string(), z.array(z.string())),
+  customListOrders: z.record(z.string(), z.array(z.string())),
 });
 
 export type ZUserSettings = z.infer<typeof zUserSettingsSchema>;
@@ -246,6 +248,8 @@ export const zUpdateUserSettingsSchema = zUserSettingsSchema.partial().pick({
   tagStyle: true,
   curatedTagIds: true,
   inferredTagLang: true,
+  customBookmarkOrders: true,
+  customListOrders: true,
 });
 
 export const zUpdateBackupSettingsSchema = zUpdateUserSettingsSchema.pick({

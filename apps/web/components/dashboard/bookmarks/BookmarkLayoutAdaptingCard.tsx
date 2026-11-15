@@ -43,7 +43,6 @@ import { useTRPC } from "@karakeep/shared-react/trpc";
 import { BookmarkTypes } from "@karakeep/shared/types/bookmarks";
 import {
   getBookmarkDisplayTitle,
-  getBookmarkTitle,
   getFallbackFaviconUrl,
   isBookmarkStillTagging,
 } from "@karakeep/shared/utils/bookmarkUtils";
@@ -893,7 +892,7 @@ function CompactGridView({ bookmark, className, bookmarkIndex }: Props) {
       ? ("_blank" as const)
       : ("_self" as const);
 
-  let label = getBookmarkTitle(bookmark);
+  let label = getBookmarkDisplayTitle(bookmark);
   if (!label && bookmark.content.type === BookmarkTypes.LINK) {
     try {
       label = new URL(bookmark.content.url).host;
