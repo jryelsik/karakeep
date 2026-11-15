@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import SmartListMarker from "@/components/shared/sidebar/SmartListMarker";
 import { Button, ButtonWithTooltip } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { LIST_DRAG_MIME, LIST_GROUP_MIME } from "@/lib/bookmark-drag";
 import { useTranslation } from "@/lib/i18n/client";
+import { useSortOrderStore } from "@/lib/store/useSortOrderStore";
 import { cn } from "@/lib/utils";
 import {
   Archive,
@@ -50,6 +52,14 @@ function ListItem({
   collapsible,
   itemCount,
   description,
+  draggable,
+  isDragged,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
 }: {
   name: string;
   icon: React.ReactNode;
@@ -60,13 +70,31 @@ function ListItem({
   itemCount?: number;
   description?: string;
   style?: React.CSSProperties;
+  draggable?: boolean;
+  isDragged?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: React.DragEventHandler<HTMLLIElement>;
+  onDragOver?: React.DragEventHandler<HTMLLIElement>;
+  onDragLeave?: React.DragEventHandler<HTMLLIElement>;
+  onDrop?: React.DragEventHandler<HTMLLIElement>;
+  onDragEnd?: React.DragEventHandler<HTMLLIElement>;
 }) {
   const { t } = useTranslation();
 
   return (
     <li
-      className="group/list-row flex min-h-16 items-center justify-between gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-accent/30"
+      className={cn(
+        "group/list-row flex min-h-16 items-center justify-between gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-accent/30",
+        isDragged && "opacity-40",
+        isDragOver && "bg-accent ring-2 ring-inset ring-primary",
+      )}
       style={style}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
     >
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex h-full items-center justify-end gap-2">
@@ -94,7 +122,11 @@ function ListItem({
             <span className="size-4 shrink-0" />
           )}
         </div>
-        <Link href={path} className="flex min-w-0 items-center gap-3">
+        <Link
+          href={path}
+          draggable={draggable ? false : undefined}
+          className="flex min-w-0 items-center gap-3"
+        >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-lg text-muted-foreground">
             {icon}
           </span>
@@ -189,6 +221,12 @@ export default function AllListsView({
   archivedCount?: number;
 }) {
   const { t } = useTranslation();
+  const [draggedList, setDraggedList] = useState<{
+    id: string;
+    groupKey: string;
+  } | null>(null);
+  const [dragOverListId, setDragOverListId] = useState<string | null>(null);
+  const reorderLists = useSortOrderStore((state) => state.reorderLists);
 
   // Fetch live lists data
   const { data: listsData } = useBookmarkLists(undefined, {
@@ -204,6 +242,63 @@ export default function AllListsView({
   const hasOwnedLists = useMemo(() => {
     return lists.data.some((list) => list.userRole === "owner");
   }, [lists.data]);
+
+  const getDragProps = (
+    listId: string,
+    groupKey: string,
+    siblingIds: string[],
+  ) => ({
+    draggable: true,
+    isDragged: draggedList?.id === listId,
+    isDragOver: dragOverListId === listId,
+    onDragStart: (e: React.DragEvent<HTMLLIElement>) => {
+      e.stopPropagation();
+      e.dataTransfer.setData(LIST_DRAG_MIME, listId);
+      e.dataTransfer.setData(LIST_GROUP_MIME, groupKey);
+      e.dataTransfer.effectAllowed = "move";
+      setDraggedList({ id: listId, groupKey });
+    },
+    onDragOver: (e: React.DragEvent<HTMLLIElement>) => {
+      if (
+        !e.dataTransfer.types.includes(LIST_DRAG_MIME) ||
+        !draggedList ||
+        draggedList.groupKey !== groupKey ||
+        draggedList.id === listId
+      ) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = "move";
+      if (dragOverListId !== listId) {
+        setDragOverListId(listId);
+      }
+    },
+    onDragLeave: (e: React.DragEvent<HTMLLIElement>) => {
+      if (
+        dragOverListId === listId &&
+        (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node))
+      ) {
+        setDragOverListId(null);
+      }
+    },
+    onDrop: (e: React.DragEvent<HTMLLIElement>) => {
+      if (!e.dataTransfer.types.includes(LIST_DRAG_MIME)) return;
+      const fromId = draggedList?.id || e.dataTransfer.getData(LIST_DRAG_MIME);
+      const fromGroup =
+        draggedList?.groupKey || e.dataTransfer.getData(LIST_GROUP_MIME);
+      setDraggedList(null);
+      setDragOverListId(null);
+      if (!fromId || fromGroup !== groupKey || fromId === listId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      reorderLists(groupKey, siblingIds, fromId, listId);
+    },
+    onDragEnd: () => {
+      setDraggedList(null);
+      setDragOverListId(null);
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -268,8 +363,16 @@ export default function AllListsView({
           <CollapsibleBookmarkLists
             className="border-b last:border-b-0"
             listsData={lists}
+            groupPrefix="root:owner"
             filter={(node) => node.item.userRole === "owner"}
-            render={({ node, level, open, numBookmarks }) => (
+            render={({
+              node,
+              level,
+              open,
+              numBookmarks,
+              groupKey,
+              siblingIds,
+            }) => (
               <ListItem
                 name={node.item.name}
                 icon={node.item.icon}
@@ -279,6 +382,7 @@ export default function AllListsView({
                 collapsible={node.children.length > 0}
                 open={open}
                 style={{ marginLeft: `${level * 1}rem` }}
+                {...getDragProps(node.item.id, groupKey, siblingIds)}
               />
             )}
           />
@@ -290,8 +394,9 @@ export default function AllListsView({
           <CollapsibleBookmarkLists
             className="border-b last:border-b-0"
             listsData={lists}
+            groupPrefix="root:shared"
             filter={(node) => node.item.userRole !== "owner"}
-            render={({ node, open, numBookmarks }) => (
+            render={({ node, open, numBookmarks, groupKey, siblingIds }) => (
               <ListItem
                 name={node.item.name}
                 icon={node.item.icon}
@@ -300,6 +405,7 @@ export default function AllListsView({
                 path={`/dashboard/lists/${node.item.id}`}
                 collapsible={node.children.length > 0}
                 open={open}
+                {...getDragProps(node.item.id, groupKey, siblingIds)}
               />
             )}
           />

@@ -47,4 +47,17 @@ describe("useSortOrderStore", () => {
     useSortOrderStore.getState().syncViewDefaultSort("list:1", false);
     expect(useSortOrderStore.getState().sortOrder).toBe("desc");
   });
+
+  it("reorders lists within a group", () => {
+    useSortOrderStore.setState({
+      customListOrders: {},
+    });
+    useSortOrderStore
+      .getState()
+      .reorderLists("root:owner", ["l1", "l2", "l3"], "l3", "l1");
+
+    expect(useSortOrderStore.getState().customListOrders["root:owner"]).toEqual(
+      ["l3", "l1", "l2"],
+    );
+  });
 });

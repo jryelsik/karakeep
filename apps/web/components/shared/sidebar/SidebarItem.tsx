@@ -17,11 +17,14 @@ export default function SidebarItem({
   right = null,
   dropHighlight = false,
   matchSubPaths = false,
+  draggable,
+  onLinkClick,
+  onDragStart,
+  onDragEnd,
   onDrop,
   onDragOver,
   onDragEnter,
   onDragLeave,
-  onLinkClick,
 }: {
   name: string;
   logo: React.ReactNode;
@@ -34,11 +37,14 @@ export default function SidebarItem({
   dropHighlight?: boolean;
   /** Also active on the pages under `path`, such as an import's own page. */
   matchSubPaths?: boolean;
+  draggable?: boolean;
+  onLinkClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  onDragStart?: React.DragEventHandler;
+  onDragEnd?: React.DragEventHandler;
   onDrop?: React.DragEventHandler;
   onDragOver?: React.DragEventHandler;
   onDragEnter?: React.DragEventHandler;
   onDragLeave?: React.DragEventHandler;
-  onLinkClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }) {
   const currentPath = usePathname();
   const collapsed = useSidebarCollapsed();
@@ -54,6 +60,9 @@ export default function SidebarItem({
         className,
       )}
       style={collapsed ? undefined : style}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
@@ -64,6 +73,7 @@ export default function SidebarItem({
         <Link
           href={path}
           title={name}
+          draggable={draggable ? false : undefined}
           onClick={onLinkClick}
           className={cn(
             "flex flex-1 items-center gap-x-2 rounded-[inherit] px-3 py-2",

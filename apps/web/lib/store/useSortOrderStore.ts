@@ -4,15 +4,24 @@ import { ZSortOrder } from "@karakeep/shared/types/bookmarks";
 
 export type ClientSortOrder = ZSortOrder | "custom";
 
-// ponytail: persists custom compact-grid orders in browser localStorage per view; upgrade to a DB column if cross-device sync is needed
 const STORAGE_KEY = "karakeep-compact-grid-order";
+const LIST_ORDER_STORAGE_KEY = "karakeep-list-order";
 
-function loadCustomOrders(): Record<string, string[]> {
+function loadOrders(key: string): Record<string, string[]> {
   if (typeof window === "undefined") return {};
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    return JSON.parse(localStorage.getItem(key) ?? "{}");
   } catch {
     return {};
+  }
+}
+
+function saveOrders(key: string, orders: Record<string, string[]>) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(orders));
+  } catch {
+    // Ignore storage quota errors
   }
 }
 
@@ -40,6 +49,7 @@ export function reorderBookmarkIds(
 interface SortOrderState {
   sortOrder: ClientSortOrder;
   customOrders: Record<string, string[]>;
+  customListOrders: Record<string, string[]>;
   setSortOrder: (sortOrder: ClientSortOrder) => void;
   syncViewDefaultSort: (viewKey: string, isCompactGrid: boolean) => void;
   reorderCompactGrid: (
@@ -48,17 +58,24 @@ interface SortOrderState {
     fromId: string,
     toId: string,
   ) => void;
+  reorderLists: (
+    groupKey: string,
+    visibleIds: string[],
+    fromId: string,
+    toId: string,
+  ) => void;
 }
 
 export const useSortOrderStore = create<SortOrderState>((set) => ({
   sortOrder: "desc", // default sort order
-  customOrders: loadCustomOrders(),
+  customOrders: loadOrders(STORAGE_KEY),
+  customListOrders: loadOrders(LIST_ORDER_STORAGE_KEY),
   setSortOrder: (sortOrder) => set({ sortOrder }),
   syncViewDefaultSort: (viewKey, isCompactGrid) =>
     set((state) => {
       const customOrders = Object.keys(state.customOrders).length
         ? state.customOrders
-        : loadCustomOrders();
+        : loadOrders(STORAGE_KEY);
       const hasCustomOrder = Boolean(customOrders[viewKey]?.length);
       if (isCompactGrid) {
         if (hasCustomOrder) {
@@ -74,7 +91,7 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
     set((state) => {
       const current = Object.keys(state.customOrders).length
         ? state.customOrders
-        : loadCustomOrders();
+        : loadOrders(STORAGE_KEY);
       const nextIds = reorderBookmarkIds(
         current[viewKey],
         visibleIds,
@@ -82,11 +99,22 @@ export const useSortOrderStore = create<SortOrderState>((set) => ({
         toId,
       );
       const customOrders = { ...current, [viewKey]: nextIds };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(customOrders));
-      } catch {
-        // Ignore storage quota errors
-      }
+      saveOrders(STORAGE_KEY, customOrders);
       return { customOrders, sortOrder: "custom" };
+    }),
+  reorderLists: (groupKey, visibleIds, fromId, toId) =>
+    set((state) => {
+      const current = Object.keys(state.customListOrders).length
+        ? state.customListOrders
+        : loadOrders(LIST_ORDER_STORAGE_KEY);
+      const nextIds = reorderBookmarkIds(
+        current[groupKey],
+        visibleIds,
+        fromId,
+        toId,
+      );
+      const customListOrders = { ...current, [groupKey]: nextIds };
+      saveOrders(LIST_ORDER_STORAGE_KEY, customListOrders);
+      return { customListOrders };
     }),
 }));
